@@ -6,14 +6,14 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-100">
       <div className="flex flex-col justify-center w-full px-4 sm:px-6 lg:flex-none lg:w-1/2 xl:w-2/5">
-        <div className="mx-auto w-full max-w-sm lg:w-96 pt-20">
-          <div className="mb-2">
-            <h1 className="text-center text-4xl font-extrabold text-gray-900">
+        <div className="mx-auto w-full max-w-sm lg:w-96">
+          <div className="mb-6 text-center">
+            <h1 className="text-3xl font-bold text-gray-900">
               Welcome to <span className="text-black">GrowthLink</span>
             </h1>
-            <p className="mt-2 text-center text-sm text-gray-600">Empowering Your Growth Journey</p>
+            <p className="mt-2 text-sm text-gray-600">Empowering Your Growth Journey</p>
           </div>
           {children}
         </div>

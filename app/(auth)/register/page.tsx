@@ -5,9 +5,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/app/types/user";
 import { useRouter } from "next/navigation";
+import { LockIcon, MailIcon, UserIcon, CalendarIcon, PhoneIcon, MapPinIcon } from "lucide-react";
 
 export default function Register() {
   const [formData, setFormData] = useState<User & { confirmPassword: string }>({
@@ -61,138 +63,181 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full space-y-8">
-        {/* <div>
-          <h1 className="text-center text-4xl font-extrabold text-gray-900">
-            Welcome to <span className="text-black">GrowthLink</span>
-          </h1>
-          <p className="mt-2 text-center text-sm text-gray-600">Empowering Your Growth Journey</p>
-        </div> */}
-        <div className="mt-8 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Create your account</h2>
+    <div className="w-full max-w-2xl mx-auto">
+      <Card className="bg-white shadow-lg border border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center text-gray-900">
+            Create your account
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <form onSubmit={handleRegister} className="space-y-6">
-            <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-              <div className="sm:col-span-2">
-                <Label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </Label>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email
+              </Label>
+              <div className="relative">
+                <MailIcon
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
+                  className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500 w-full"
                   value={formData.email}
                   onChange={handleChange}
-                  className="mt-1"
                 />
               </div>
-              <div>
-                <Label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <LockIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700"
-                >
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                   Confirm Password
                 </Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <LockIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                   First Name
                 </Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <UserIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
                   Last Name
                 </Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <UserIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="dob" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="dob" className="text-sm font-medium text-gray-700">
                   Date of Birth
                 </Label>
-                <Input
-                  id="dob"
-                  name="dob"
-                  type="date"
-                  required
-                  value={formData.dob}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <CalendarIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="dob"
+                    name="dob"
+                    type="date"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.dob}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="phoneNo" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="phoneNo" className="text-sm font-medium text-gray-700">
                   Phone Number
                 </Label>
-                <Input
-                  id="phoneNo"
-                  name="phoneNo"
-                  type="tel"
-                  required
-                  value={formData.phoneNo}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <PhoneIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="phoneNo"
+                    name="phoneNo"
+                    type="tel"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.phoneNo}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div className="sm:col-span-2">
-                <Label htmlFor="street" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="street" className="text-sm font-medium text-gray-700">
                   Street
                 </Label>
-                <Input
-                  id="street"
-                  name="street"
-                  type="text"
-                  required
-                  value={formData.street}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <MapPinIcon
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <Input
+                    id="street"
+                    name="street"
+                    type="text"
+                    required
+                    className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                    value={formData.street}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="city" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="city" className="text-sm font-medium text-gray-700">
                   City
                 </Label>
                 <Input
@@ -200,13 +245,13 @@ export default function Register() {
                   name="city"
                   type="text"
                   required
+                  className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
                   value={formData.city}
                   onChange={handleChange}
-                  className="mt-1"
                 />
               </div>
-              <div>
-                <Label htmlFor="state" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="state" className="text-sm font-medium text-gray-700">
                   State
                 </Label>
                 <Input
@@ -214,13 +259,13 @@ export default function Register() {
                   name="state"
                   type="text"
                   required
+                  className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
                   value={formData.state}
                   onChange={handleChange}
-                  className="mt-1"
                 />
               </div>
-              <div>
-                <Label htmlFor="zipcode" className="block text-sm font-medium text-gray-700">
+              <div className="space-y-2">
+                <Label htmlFor="zipcode" className="text-sm font-medium text-gray-700">
                   Zipcode
                 </Label>
                 <Input
@@ -228,38 +273,34 @@ export default function Register() {
                   name="zipcode"
                   type="text"
                   required
+                  className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
                   value={formData.zipcode}
                   onChange={handleChange}
-                  className="mt-1"
                 />
               </div>
             </div>
-            <div>
-              <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
-                Sign up
-              </Button>
-            </div>
+            <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
+              Sign up
+            </Button>
           </form>
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or</span>
-              </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="relative w-full">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
             </div>
-            <div className="mt-6 text-center">
-              <Link
-                href="/login"
-                className="font-medium text-gray-900 hover:text-gray-700 hover:underline"
-              >
-                Already have an account? Login
-              </Link>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
             </div>
           </div>
-        </div>
-      </div>
+          <Link
+            href="/login"
+            className="text-sm font-medium text-gray-700 hover:text-black transition-colors hover:underline"
+          >
+            Already have an account? Login
+          </Link>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
