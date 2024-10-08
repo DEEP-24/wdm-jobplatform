@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import type { User } from "@/app/types/user";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import type { User } from "@/app/types/user";
 import { LockIcon, MailIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,7 +27,7 @@ export default function Login() {
         title: "Success",
         description: "You have successfully logged in.",
       });
-      router.push("/dashboard");
+      router.push("/");
     } else {
       toast({
         title: "Error",
