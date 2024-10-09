@@ -24,6 +24,7 @@ import {
   User,
   UserPenIcon,
   Users2Icon,
+  MapPinIcon,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -50,6 +51,7 @@ const navItems = [
   { name: "Saved Jobs", icon: BriefcaseIcon, href: "/saved-jobs" },
   { name: "Applied Jobs", icon: BookmarkIcon, href: "/applied-jobs" },
   { name: "Become a Mentor", icon: UserPenIcon, href: "/become-a-mentor" },
+  { name: "Contact", icon: MapPinIcon, href: "/contact" },
 ];
 
 interface DashboardLayoutProps {
