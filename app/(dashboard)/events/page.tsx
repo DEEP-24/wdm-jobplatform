@@ -4,13 +4,36 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, Calendar, MapPin, Users, Clock } from "lucide-react";
+import { ChevronLeft, Calendar, MapPin, Users, Clock, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "next/navigation";
 
-// Mock data for events and sessions
-const eventsData = [
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  eventType: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  isVirtual: boolean;
+  maxAttendees: number;
+  registrationDeadline: string;
+  status: string;
+  sessions: {
+    id: string;
+    eventId: string;
+    title: string;
+    description: string;
+    startTime: string;
+    endTime: string;
+    location: string;
+    maxAttendees: number;
+  }[];
+}
+
+const defaultEvents: Event[] = [
   {
     id: "1",
     title: "Tech Conference 2024",
@@ -71,40 +94,37 @@ const eventsData = [
       },
     ],
   },
-  {
-    id: "3",
-    title: "Virtual Blockchain Summit",
-    description: "Online summit focusing on blockchain technology and its applications.",
-    eventType: "Summit",
-    startDate: "2025-01-20",
-    endDate: "2025-01-22",
-    location: "Online",
-    isVirtual: true,
-    maxAttendees: 2000,
-    registrationDeadline: "2025-01-15",
-    status: "Upcoming",
-    sessions: [
-      {
-        id: "301",
-        eventId: "3",
-        title: "Decentralized Finance (DeFi) Explained",
-        description: "An in-depth look at the growing field of decentralized finance.",
-        startTime: "2025-01-20T14:00:00",
-        endTime: "2025-01-20T15:30:00",
-        location: "Virtual Room 1",
-        maxAttendees: 500,
-      },
-    ],
-  },
 ];
 
 export default function EventsPage() {
-  const [selectedEvent, setSelectedEvent] = useState<(typeof eventsData)[0] | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    // Load events from localStorage
+    let storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+
+    // Check if default events are already in stored events
+    const defaultEventIds = defaultEvents.map((event) => event.id);
+    const existingDefaultEvents = storedEvents.filter((event: Event) =>
+      defaultEventIds.includes(event.id),
+    );
+
+    // If some default events are missing, add them
+    if (existingDefaultEvents.length < defaultEvents.length) {
+      const missingDefaultEvents = defaultEvents.filter(
+        (event: Event) => !storedEvents.some((storedEvent: Event) => storedEvent.id === event.id),
+      );
+      storedEvents = [...storedEvents, ...missingDefaultEvents];
+      localStorage.setItem("events", JSON.stringify(storedEvents));
+    }
+
+    setEvents(storedEvents);
+
+    // Load user's registered sessions
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (currentUser) {
       const reservations = JSON.parse(localStorage.getItem("reservations") || "[]");
@@ -113,7 +133,7 @@ export default function EventsPage() {
     }
   }, []);
 
-  const handleEventClick = (event: (typeof eventsData)[0]) => {
+  const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
   };
 
@@ -172,6 +192,10 @@ export default function EventsPage() {
 
       router.push("/reservations");
     }
+  };
+
+  const handleAddEvent = () => {
+    router.push("/add-event");
   };
 
   if (selectedEvent) {
@@ -263,13 +287,16 @@ export default function EventsPage() {
   return (
     <div className="w-full">
       <div className="bg-gray-100 p-4 mb-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h2 className="text-3xl font-bold">Upcoming Events</h2>
+          <Button onClick={handleAddEvent}>
+            <Plus className="mr-2 h-4 w-4" /> Add Event
+          </Button>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {eventsData.map((event) => (
+          {events.map((event) => (
             <Card
               key={event.id}
               className="cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"

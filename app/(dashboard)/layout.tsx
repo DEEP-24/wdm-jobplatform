@@ -18,6 +18,7 @@ import {
   LogOutIcon,
   Menu,
   NetworkIcon,
+  PlusIcon,
   TargetIcon,
   User,
   UserPenIcon,
@@ -32,6 +33,7 @@ import { LoadingComponent } from "./_components/loading";
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
+  { name: "Add Event", icon: PlusIcon, href: "/add-event" },
   { name: "Events", icon: CalendarIcon, href: "/events" },
   { name: "Reservations", icon: CalendarIcon, href: "/reservations" },
   { name: "Mentorship Programs", icon: TargetIcon, href: "/mentorship-programs" },
