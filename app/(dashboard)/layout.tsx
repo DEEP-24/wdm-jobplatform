@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,39 +9,38 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  BookmarkIcon,
   BriefcaseIcon,
   CalendarIcon,
   FileTextIcon,
   GraduationCapIcon,
   HomeIcon,
   LogOutIcon,
-  NetworkIcon,
-  User,
-  UserIcon,
-  UserPenIcon,
-  UsersIcon,
   Menu,
+  NetworkIcon,
+  TargetIcon,
+  User,
+  UserPenIcon,
+  Users2Icon,
   X,
-  BookmarkIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
-import { usePathname } from "next/navigation"; // Add this import
+import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { LoadingComponent } from "./_components/loading";
 
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
   { name: "Events", icon: CalendarIcon, href: "/events" },
-  { name: "Mentorship Programs", icon: UsersIcon, href: "/mentorship-programs" },
+  { name: "Mentorship Programs", icon: TargetIcon, href: "/mentorship-programs" },
+  { name: "Mentors", icon: Users2Icon, href: "/mentors" },
   { name: "Resources", icon: FileTextIcon, href: "/resources" },
-  { name: "Career Development", icon: GraduationCapIcon, href: "/career" },
+  { name: "Career Development", icon: GraduationCapIcon, href: "/career-development" },
   { name: "Networking", icon: NetworkIcon, href: "/networking" },
-  {
-    name: "Saved Jobs",
-    icon: BriefcaseIcon,
-    href: "/saved-jobs",
-  },
+  { name: "Saved Jobs", icon: BriefcaseIcon, href: "/saved-jobs" },
+  { name: "Applied Jobs", icon: BookmarkIcon, href: "/applied-jobs" },
+  { name: "Become a Mentor", icon: UserPenIcon, href: "/become-a-mentor" },
 ];
 
 interface DashboardLayoutProps {
@@ -51,16 +49,18 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
-  const pathname = usePathname(); // Add this line
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isMentor, setIsMentor] = useState(false);
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser");
-    if (!currentUser) {
+    const storedUser = localStorage.getItem("currentUser");
+    if (!storedUser) {
       router.push("/login");
     } else {
-      setIsLoading(false);
+      const user = JSON.parse(storedUser);
+      const mentors = JSON.parse(localStorage.getItem("mentors") || "[]");
+      setIsMentor(mentors.some((mentor: any) => mentor.id === user.id));
     }
   }, [router]);
 
@@ -72,10 +72,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a more sophisticated loading component
-  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -93,32 +89,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         <ScrollArea className="flex-grow overflow-y-auto">
           <nav className="px-4 py-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                  pathname === item.href
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              if (item.name === "Become a Mentor" && isMentor) {
+                return null;
+              }
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                    pathname === item.href
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
-          <div className="p-4 border-t border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">Become a Mentor</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Unlock your mentorship skills and let others get privilege to listen to your
-              teachings.
-            </p>
-            <Button className="w-full mt-4 bg-black text-white hover:bg-gray-800">
-              mentor now
-            </Button>
-          </div>
+          {!isMentor && (
+            <div className="p-4 border-t border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800">Become a Mentor</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Unlock your mentorship skills and let others get privilege to listen to your
+                teachings.
+              </p>
+              <Button asChild className="w-full mt-4 bg-black text-white hover:bg-gray-800">
+                <Link href="/become-a-mentor">Mentor Now</Link>
+              </Button>
+            </div>
+          )}
         </ScrollArea>
       </div>
 
@@ -149,7 +152,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex-1 overflow-auto bg-gray-100 p-6">{children}</main>
+        <main className="flex-1 overflow-auto bg-gray-100 p-6">
+          <Suspense fallback={<LoadingComponent />}>{children}</Suspense>
+        </main>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import Link from "next/link";
 
 // Mock data for mentorship programs
 const mentorshipProgramsData = [
@@ -69,6 +70,13 @@ export default function MentorshipProgramsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Mentorship Programs</h1>
+        <Button asChild>
+          <Link href="/mentors">View Available Mentors</Link>
+        </Button>
+      </div>
+
       {mentorshipProgramsData.map((program) => (
         <Card key={program.id} className="mb-4">
           <CardHeader>
