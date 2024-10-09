@@ -38,6 +38,8 @@ const navItems = [
   { name: "Resources", icon: FileTextIcon, href: "/resources" },
   { name: "Career Development", icon: GraduationCapIcon, href: "/career-development" },
   { name: "Networking", icon: NetworkIcon, href: "/networking" },
+  { name: "Followers", icon: Users2Icon, href: "/followers" },
+  { name: "Following", icon: Users2Icon, href: "/following" },
   { name: "Saved Jobs", icon: BriefcaseIcon, href: "/saved-jobs" },
   { name: "Applied Jobs", icon: BookmarkIcon, href: "/applied-jobs" },
   { name: "Become a Mentor", icon: UserPenIcon, href: "/become-a-mentor" },
