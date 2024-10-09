@@ -1,5 +1,6 @@
 "use client";
 
+import { USA_STATES } from "@/app/constants/usa-states";
 import type { User } from "@/app/types/user";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LockIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 // Hard-coded user for testing
 const testUser: User = {

@@ -10,6 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/app/types/user";
 import { useRouter } from "next/navigation";
 import { LockIcon, MailIcon, UserIcon, CalendarIcon, PhoneIcon, MapPinIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { USA_STATES } from "@/app/constants/usa-states";
 
 export default function Register() {
   const [formData, setFormData] = useState<Omit<User, "id"> & { confirmPassword: string }>({
@@ -259,15 +267,22 @@ export default function Register() {
                 <Label htmlFor="state" className="text-sm font-medium text-gray-700">
                   State
                 </Label>
-                <Input
-                  id="state"
+                <Select
                   name="state"
-                  type="text"
-                  required
-                  className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
+                  onValueChange={(value) => setFormData({ ...formData, state: value })}
                   value={formData.state}
-                  onChange={handleChange}
-                />
+                >
+                  <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500">
+                    <SelectValue placeholder="Select a state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USA_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zipcode" className="text-sm font-medium text-gray-700">

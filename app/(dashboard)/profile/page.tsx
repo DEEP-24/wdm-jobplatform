@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { CalendarIcon, UserCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
+import type { User } from "@/app/types/user";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -15,7 +19,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -23,54 +27,84 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/hooks/use-toast";
+import { USA_STATES } from "@/app/constants/usa-states";
 
 export default function ProfilePage() {
-  const form = useForm({
+  const form = useForm<User>({
     defaultValues: {
+      id: "",
       email: "",
       password: "",
       firstName: "",
       lastName: "",
-      dob: new Date(),
+      dob: "",
       phoneNo: "",
       street: "",
       city: "",
       state: "",
-      zipCode: "",
+      zipcode: "",
     },
+  });
+
+  const watchedState = useWatch({
+    control: form.control,
+    name: "state",
   });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
-      const user = JSON.parse(storedUser);
-      form.reset({
-        email: user.email || "",
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        dob: user.dob ? new Date(user.dob) : new Date(),
-        phoneNo: user.phoneNo || "",
-        street: user.street || "",
-        city: user.city || "",
-        state: user.state || "",
-        zipCode: user.zipCode || "",
-      });
+      const user: User = JSON.parse(storedUser);
+      console.log("Loaded user data:", user);
+      form.reset(user);
     }
   }, [form]);
 
-  function onSubmit(values: any) {
-    console.log(values);
-    localStorage.setItem("currentUser", JSON.stringify(values));
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been successfully updated.",
-    });
+  function onSubmit(values: User) {
+    // Get all users from localStorage
+    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
+
+    // Find the index of the current user
+    const userIndex = users.findIndex((user) => user.id === values.id);
+
+    if (userIndex !== -1) {
+      // Update the user in the users array
+      users[userIndex] = {
+        ...users[userIndex],
+        ...values,
+      };
+
+      // Update users in localStorage
+      localStorage.setItem("users", JSON.stringify(users));
+
+      // Update currentUser in localStorage
+      localStorage.setItem("currentUser", JSON.stringify(values));
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been successfully updated.",
+      });
+
+      // Force a re-render by resetting the form with the new values
+      form.reset(values);
+    } else {
+      toast({
+        title: "Error",
+        description: "User not found. Unable to update profile.",
+        variant: "destructive",
+      });
+    }
   }
+
+  // const handleStateChange = (value: string) => {
+  //   setUserData((prevData) => ({
+  //     ...prevData!,
+  //     state: value,
+  //   }));
+  //   form.setValue("state", value);
+  // };
 
   return (
     <div className="container mx-auto py-10">
@@ -142,40 +176,42 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 items-center justify-center">
                   <FormField
                     control={form.control}
                     name="dob"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Date of Birth</FormLabel>
-                        <div className="flex-grow flex items-stretch">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className="w-full h-full px-3 text-left font-normal flex items-center"
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={`w-full pl-3 text-left font-normal ${
+                                  !field.value && "text-muted-foreground"
+                                }`}
+                              >
+                                {field.value ? (
+                                  format(new Date(field.value), "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? new Date(field.value) : undefined}
+                              onSelect={(date) =>
+                                field.onChange(date ? date.toISOString().split("T")[0] : "")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </FormItem>
                     )}
                   />
@@ -185,11 +221,9 @@ export default function ProfilePage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Phone Number</FormLabel>
-                        <div className="flex-grow flex items-stretch">
-                          <FormControl>
-                            <Input placeholder="1234567890" {...field} className="h-full" />
-                          </FormControl>
-                        </div>
+                        <FormControl>
+                          <Input placeholder="1234567890" {...field} />
+                        </FormControl>
                       </FormItem>
                     )}
                   />
@@ -229,26 +263,29 @@ export default function ProfilePage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>State</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a state" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="CA">California</SelectItem>
-                            <SelectItem value="NY">New York</SelectItem>
-                            <SelectItem value="TX">Texas</SelectItem>
-                            <SelectItem value="FL">Florida</SelectItem>
-                            <SelectItem value="IL">Illinois</SelectItem>
+                            {USA_STATES.map((state) => (
+                              <SelectItem key={state} value={state}>
+                                {state}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
+                        <FormDescription>
+                          Current state: {watchedState || "None selected"}
+                        </FormDescription>
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="zipCode"
+                    name="zipcode"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Zip Code</FormLabel>
