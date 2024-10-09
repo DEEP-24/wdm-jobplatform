@@ -76,13 +76,23 @@ export default function SavedJobsPage() {
               <CardContent>
                 <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
               </CardContent>
-              <CardFooter className="flex justify-between items-center">
+              <CardFooter className="flex items-center gap-1">
                 {job.salary && (
-                  <Badge variant="default" className="mr-2 mb-2 bg-gray-800 text-white">
+                  <Badge variant="secondary" className="mr-2 mb-2">
                     {job.salary}
                   </Badge>
                 )}
-                <span className="text-xs text-gray-500">{job.postedAgo}</span>
+                {job.type && (
+                  <Badge variant="secondary" className="mr-2 mb-2">
+                    {job.type}
+                  </Badge>
+                )}
+                {job.workMode && (
+                  <Badge variant="secondary" className="mr-2 mb-2">
+                    {job.workMode}
+                  </Badge>
+                )}
+                <span className="text-xs mb-2 text-gray-500">{job.postedAgo}</span>
               </CardFooter>
             </Card>
           ))}
@@ -108,9 +118,12 @@ export default function SavedJobsPage() {
                 {selectedJob.salary || "Salary not specified"}
               </Badge>
               <Badge variant="outline" className="mr-2 mb-2 bg-gray-100">
-                {selectedJob.jobType}
+                {selectedJob.type}
               </Badge>
-              <span className="text-sm text-gray-500">{selectedJob.postedAgo}</span>
+              <Badge variant="outline" className="mr-2 mb-2 bg-gray-100">
+                {selectedJob.workMode}
+              </Badge>
+              <span className="text-sm mb-2 text-gray-500">{selectedJob.postedAgo}</span>
             </div>
           </div>
           <p className="text-gray-700 mb-6">{selectedJob.fullDescription}</p>

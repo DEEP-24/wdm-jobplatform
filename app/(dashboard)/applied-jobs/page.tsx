@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PageHeading } from "@/app/(dashboard)/_components/page-heading";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 interface JobApplication {
   id: string;
@@ -20,6 +18,9 @@ interface JobApplication {
   lastUpdated: string;
   notes: string;
   jobTitle: string;
+  jobType: string;
+  salary: string;
+  workMode: string;
 }
 
 export default function AppliedJobsPage() {
@@ -34,17 +35,6 @@ export default function AppliedJobsPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Applied Jobs</h1>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/career-development#resume">Resume Writing Tips</Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/career-development#interview">Interview Preparation</Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/mentors">Find a Mentor</Link>
-          </Button>
-        </div>
       </div>
 
       <ScrollArea className="h-[calc(100vh-200px)]">
@@ -99,6 +89,18 @@ export default function AppliedJobsPage() {
                       >
                         View LinkedIn Profile
                       </a>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Job Type</p>
+                      <p>{application.jobType}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Salary</p>
+                      <p>{application.salary}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Work Mode</p>
+                      <p>{application.workMode}</p>
                     </div>
                   </div>
                   <div className="mt-4">

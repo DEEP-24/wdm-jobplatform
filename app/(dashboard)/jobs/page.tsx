@@ -4,10 +4,6 @@ import type { Job } from "@/app/types/job";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +13,23 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useToast } from "@/hooks/use-toast";
+import { ChevronLeft } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import Link from "next/link";
 
-// Default jobs data
+type JobType = "job" | "internship";
+
 const defaultJobs: Job[] = [
   {
     id: "1",
@@ -31,8 +39,9 @@ const defaultJobs: Job[] = [
     salary: "$140k/yr",
     postedAgo: "5 hours ago",
     fullDescription:
-      "We are looking for a skilled Full Stack developer who has a good knowledge on SEO, WebFlow, Framer, React, UI/UX and all the major web related technologies...",
-    jobType: "onsite",
+      "We are looking for a skilled Full Stack developer to join our dynamic team at Google. The ideal candidate will have at least 5 years of experience in React and Node.js, with a proven track record of building and maintaining complex web applications. In this role, you will be responsible for developing and maintaining our cutting-edge web application, working closely with both front-end and back-end systems. You'll be involved in all stages of the development lifecycle, from conceptualization and design to implementation and deployment. We're seeking someone who is passionate about creating efficient, scalable, and user-friendly applications. You should have a strong understanding of web technologies and be comfortable working in a fast-paced, collaborative environment. Your expertise in both client-side and server-side programming will be crucial in delivering high-quality solutions that meet our users' needs. At Google, we value innovation and creativity. You'll have the opportunity to work on challenging projects, contribute your ideas, and make a significant impact on our products used by millions of people worldwide. If you're ready to take your career to the next level and work with some of the brightest minds in the industry, we encourage you to apply for this exciting position.",
+    workMode: "onsite",
+    type: "job",
   },
   {
     id: "2",
@@ -42,8 +51,9 @@ const defaultJobs: Job[] = [
     salary: "$120k/yr",
     postedAgo: "3 hours ago",
     fullDescription:
-      "We are looking for a skilled Software Engineer who has a good knowledge on SEO, WebFlow, Framer, React, UI/UX and all the major web related technologies...",
-    jobType: "remote",
+      "We are looking for a skilled Software Engineer to join our team at Microsoft. The ideal candidate will have 5+ years of experience in React and Node.js, with a strong background in building scalable web applications. In this role, you will be responsible for developing and maintaining our cutting-edge web platforms, working on both front-end and back-end systems. You'll collaborate with cross-functional teams to design, implement, and optimize new features, ensuring high performance and reliability. We're seeking someone who is passionate about clean, efficient code and stays up-to-date with the latest industry trends and best practices. Your expertise in modern web technologies will be crucial in delivering innovative solutions that meet our users' needs. At Microsoft, we offer a dynamic work environment where you'll have the opportunity to work on projects that impact millions of users worldwide. If you're ready to take on exciting challenges and grow your career in a supportive and innovative company, we encourage you to apply for this position.",
+    workMode: "remote",
+    type: "job",
   },
   {
     id: "3",
@@ -53,16 +63,41 @@ const defaultJobs: Job[] = [
     salary: "$150k/yr",
     postedAgo: "2 hours ago",
     fullDescription:
-      "We are looking for a skilled Data Scientist who has a good knowledge on SEO, WebFlow, Framer, React, UI/UX and all the major web related technologies...",
-    jobType: "onsite",
+      "We are looking for a skilled Data Scientist to join our team at Amazon. The ideal candidate will have 5+ years of experience in React and Node.js, with a strong background in building scalable web applications. In this role, you will be responsible for developing and maintaining our cutting-edge web platforms, working on both front-end and back-end systems. You'll collaborate with cross-functional teams to design, implement, and optimize new features, ensuring high performance and reliability. We're seeking someone who is passionate about clean, efficient code and stays up-to-date with the latest industry trends and best practices. Your expertise in modern web technologies will be crucial in delivering innovative solutions that meet our users' needs. At Amazon, we offer a dynamic work environment where you'll have the opportunity to work on projects that impact millions of users worldwide. If you're ready to take on exciting challenges and grow your career in a supportive and innovative company, we encourage you to apply for this position.",
+    workMode: "onsite",
+    type: "job",
+  },
+  {
+    id: "4",
+    title: "Software Engineering Intern",
+    company: "Facebook",
+    description: "We are seeking a talented Software Engineering Intern...",
+    salary: "$30/hr",
+    postedAgo: "1 day ago",
+    fullDescription:
+      "We are seeking a talented Software Engineering Intern to join our team at Facebook for a summer internship. The ideal candidate will be pursuing a degree in Computer Science or a related field, with strong programming skills in languages such as Python, Java, or C++. This internship offers an exciting opportunity to work on real-world projects that impact millions of users worldwide. You'll collaborate with experienced engineers, learn about large-scale systems, and contribute to the development of innovative features. We're looking for someone who is passionate about technology, eager to learn, and ready to tackle complex challenges. This internship will provide valuable industry experience and the chance to grow your skills in a fast-paced, collaborative environment.",
+    workMode: "onsite",
+    type: "internship",
+  },
+  {
+    id: "5",
+    title: "Data Science Intern",
+    company: "Netflix",
+    description: "Join our Data Science team as an intern...",
+    salary: "$28/hr",
+    postedAgo: "2 days ago",
+    fullDescription:
+      "Join our Data Science team as an intern at Netflix and dive into the world of big data and machine learning. We're looking for a motivated student pursuing a degree in Data Science, Statistics, or a related field. As a Data Science Intern, you'll work on projects that help shape our content recommendations, optimize streaming quality, and improve user experience. You should have a strong foundation in statistical analysis, machine learning algorithms, and programming languages such as Python or R. This internship offers a unique opportunity to apply your academic knowledge to real-world problems, work with large datasets, and learn from industry experts. If you're passionate about using data to drive decision-making and create impactful solutions, we encourage you to apply for this exciting internship opportunity.",
+    workMode: "hybrid",
+    type: "internship",
   },
 ];
 
 interface JobApplication {
   id: string;
   jobID: string;
-  applicantName: string; // Add this line
-  applicantEmail: string; // Add this line
+  applicantName: string;
+  applicantEmail: string;
   resumeURL: string;
   coverLetterURL: string;
   linkedinURL: string;
@@ -72,6 +107,9 @@ interface JobApplication {
   lastUpdated: string;
   notes: string;
   jobTitle: string;
+  jobType: string;
+  salary: string;
+  workMode: string;
 }
 
 interface CurrentUser {
@@ -83,13 +121,16 @@ interface CurrentUser {
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(defaultJobs[0]);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [jobTypeFilter, setJobTypeFilter] = useState<JobType | "all">("all");
   const { toast } = useToast();
   const { register, handleSubmit, reset } = useForm();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  const isLargeDevice = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
     // Load jobs from localStorage
@@ -110,6 +151,11 @@ export default function JobsPage() {
 
     setJobs(storedJobs);
 
+    // Set default selected job only for medium and large devices
+    if (isLargeDevice) {
+      setSelectedJob(storedJobs[0] || null);
+    }
+
     // Load saved and applied jobs
     const savedJobs: Job[] = JSON.parse(localStorage.getItem("savedJobs") || "[]");
     setSavedJobIds(new Set(savedJobs.map((job) => job.id)));
@@ -122,7 +168,22 @@ export default function JobsPage() {
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
-  }, []);
+  }, [isLargeDevice]); // Add isLargeDevice as a dependency
+
+  useEffect(() => {
+    // Update selectedJob when jobTypeFilter changes (only for medium and large devices)
+    if (
+      isLargeDevice &&
+      jobTypeFilter !== "all" &&
+      selectedJob &&
+      selectedJob.type !== jobTypeFilter
+    ) {
+      const firstMatchingJob = jobs.find((job) => job.type === jobTypeFilter);
+      setSelectedJob(firstMatchingJob || null);
+    }
+  }, [jobTypeFilter, isLargeDevice, jobs, selectedJob]);
+
+  const filteredJobs = jobs.filter((job) => jobTypeFilter === "all" || job.type === jobTypeFilter);
 
   const saveJob = (job: Job) => {
     const savedJobs: Job[] = JSON.parse(localStorage.getItem("savedJobs") || "[]");
@@ -164,6 +225,9 @@ export default function JobsPage() {
       applicationStatus: "Under Review",
       submittedAt: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
+      jobType: selectedJob.type,
+      salary: selectedJob.salary,
+      workMode: selectedJob.workMode,
     };
 
     const appliedJobs: JobApplication[] = JSON.parse(localStorage.getItem("appliedJobs") || "[]");
@@ -189,17 +253,24 @@ export default function JobsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Job Opportunities</h1>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/career-development">Explore Career Resources</Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/mentors">Find a Mentor</Link>
-          </Button>
-          <Button asChild className="w-full sm:w-auto">
+          <Select
+            value={jobTypeFilter}
+            onValueChange={(value: JobType | "all") => setJobTypeFilter(value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="job">Jobs</SelectItem>
+              <SelectItem value="internship">Internships</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* <Button asChild className="w-full sm:w-auto">
             <Link href="/add-job">
               <Plus className="mr-2 h-4 w-4" /> Add Job
             </Link>
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -211,7 +282,7 @@ export default function JobsPage() {
           }`}
         >
           <ScrollArea className="h-full pr-4">
-            {jobs.map((job) => (
+            {filteredJobs.map((job) => (
               <Card
                 key={job.id}
                 className={`m-2 cursor-pointer ${selectedJob?.id === job.id ? "border-black" : ""}`}
@@ -226,13 +297,19 @@ export default function JobsPage() {
                 <CardContent>
                   <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center">
+                <CardFooter className="flex flex-wrap items-center gap-2">
                   {job.salary && (
-                    <Badge variant="default" className="mr-2 mb-2 bg-gray-800 text-white">
+                    <Badge variant="secondary" className="mb-2">
                       {job.salary}
                     </Badge>
                   )}
-                  <span className="text-xs text-gray-500">{job.postedAgo}</span>
+                  <Badge variant="secondary" className="mb-2">
+                    {job.type}
+                  </Badge>
+                  <Badge variant="secondary" className="mb-2">
+                    {job.workMode}
+                  </Badge>
+                  <span className="text-xs text-gray-500 w-full mt-1">{job.postedAgo}</span>
                 </CardFooter>
               </Card>
             ))}
@@ -245,7 +322,7 @@ export default function JobsPage() {
             selectedJob ? "block" : "hidden md:block"
           }`}
         >
-          {selectedJob && (
+          {selectedJob ? (
             <>
               <Button
                 variant="outline"
@@ -263,7 +340,7 @@ export default function JobsPage() {
                     {selectedJob.salary || "Salary not specified"}
                   </Badge>
                   <Badge variant="outline" className="mr-2 mb-2 bg-gray-100">
-                    {selectedJob.jobType}
+                    {selectedJob.workMode}
                   </Badge>
                   <span className="mb-2 text-sm text-center text-gray-500">
                     {selectedJob.postedAgo}
@@ -349,6 +426,10 @@ export default function JobsPage() {
                 </Button>
               </div>
             </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-500">Select a job to view details</p>
+            </div>
           )}
         </div>
       </div>

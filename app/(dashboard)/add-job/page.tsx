@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/select";
 import type { Job } from "@/app/types/job";
 
+// Update the Job type to include type
+type JobType = "job" | "internship";
+
 export default function AddJobPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -102,7 +105,7 @@ export default function AddJobPage() {
                   <Label htmlFor="jobType">Job Type</Label>
                   <Select
                     onValueChange={(value) =>
-                      setValue("jobType", value as "onsite" | "remote" | "hybrid")
+                      setValue("workMode", value as "onsite" | "remote" | "hybrid")
                     }
                   >
                     <SelectTrigger>
@@ -114,10 +117,23 @@ export default function AddJobPage() {
                       <SelectItem value="hybrid">Hybrid</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.jobType && (
-                    <p className="text-red-500 text-sm">{errors.jobType.message}</p>
+                  {errors.workMode && (
+                    <p className="text-red-500 text-sm">{errors.workMode.message}</p>
                   )}
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="type">Opportunity Type</Label>
+                <Select onValueChange={(value) => setValue("type", value as JobType)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select opportunity type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="job">Job</SelectItem>
+                    <SelectItem value="internship">Internship</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
               </div>
             </div>
             <Button type="submit" className="w-full">

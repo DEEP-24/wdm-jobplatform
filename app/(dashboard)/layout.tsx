@@ -33,7 +33,7 @@ import { LoadingComponent } from "./_components/loading";
 
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
-  { name: "Forums", icon: MessageSquareCodeIcon, href: "/forums" },
+  { name: "Forums & Interest Groups", icon: MessageSquareCodeIcon, href: "/forums" },
   { name: "Add Job", icon: PlusIcon, href: "/add-job" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
   { name: "Manage Applications", icon: FileTextIcon, href: "/manage-applications" },

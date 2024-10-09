@@ -1,10 +1,11 @@
-export interface Job {
+export type Job = {
   id: string;
   title: string;
   company: string;
   description: string;
+  fullDescription: string;
   salary: string;
   postedAgo: string;
-  fullDescription: string;
-  jobType: "onsite" | "remote" | "hybrid";
-}
+  workMode: "onsite" | "remote" | "hybrid";
+  type: "job" | "internship";
+};
