@@ -17,6 +17,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,9 +31,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { USA_STATES } from "@/app/constants/usa-states";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function ProfilePage() {
-  const form = useForm<User>({
+  const form = useForm<User & { notificationPreferences: string[] }>({
     defaultValues: {
       id: "",
       email: "",
@@ -45,19 +48,23 @@ export default function ProfilePage() {
       city: "",
       state: "",
       zipcode: "",
+      notificationPreferences: [],
     },
   });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
-      const user: User = JSON.parse(storedUser);
+      const user: User & { notificationPreferences?: string[] } = JSON.parse(storedUser);
       console.log("Loaded user data:", user);
-      form.reset(user);
+      form.reset({
+        ...user,
+        notificationPreferences: user.notificationPreferences || [],
+      });
     }
   }, [form]);
 
-  function onSubmit(values: User) {
+  function onSubmit(values: User & { notificationPreferences: string[] }) {
     // Get all users from localStorage
     const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
 
@@ -92,14 +99,6 @@ export default function ProfilePage() {
       });
     }
   }
-
-  // const handleStateChange = (value: string) => {
-  //   setUserData((prevData) => ({
-  //     ...prevData!,
-  //     state: value,
-  //   }));
-  //   form.setValue("state", value);
-  // };
 
   return (
     <div className="container mx-auto py-10">
@@ -176,7 +175,7 @@ export default function ProfilePage() {
                     control={form.control}
                     name="dob"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem className="flex flex-col w-full">
                         <FormLabel>Date of Birth</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -214,7 +213,7 @@ export default function ProfilePage() {
                     control={form.control}
                     name="phoneNo"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem className="flex flex-col w-full">
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
                           <Input placeholder="1234567890" {...field} />
@@ -288,6 +287,34 @@ export default function ProfilePage() {
                     )}
                   />
                 </div>
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Notification Preference</h3>
+                <FormField
+                  control={form.control}
+                  name="notificationPreferences"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value.includes("email")}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              field.onChange(["email"]);
+                            } else {
+                              field.onChange([]);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Email Notifications</FormLabel>
+                        <FormDescription>Receive notifications via email.</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
               <Button type="submit" className="w-full">
                 Update Profile
