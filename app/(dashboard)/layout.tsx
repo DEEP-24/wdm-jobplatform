@@ -32,7 +32,9 @@ import { LoadingComponent } from "./_components/loading";
 
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
+  { name: "Add Job", icon: PlusIcon, href: "/add-job" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
+  { name: "Manage Applications", icon: FileTextIcon, href: "/manage-applications" },
   { name: "Add Event", icon: PlusIcon, href: "/add-event" },
   { name: "Events", icon: CalendarIcon, href: "/events" },
   { name: "Reservations", icon: CalendarIcon, href: "/reservations" },

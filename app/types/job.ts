@@ -3,9 +3,8 @@ export interface Job {
   title: string;
   company: string;
   description: string;
-  salary?: string;
+  salary: string;
   postedAgo: string;
   fullDescription: string;
   jobType: "onsite" | "remote" | "hybrid";
-  location?: string;
 }
