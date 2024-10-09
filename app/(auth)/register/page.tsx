@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { LockIcon, MailIcon, UserIcon, CalendarIcon, PhoneIcon, MapPinIcon } from "lucide-react";
 
 export default function Register() {
-  const [formData, setFormData] = useState<User & { confirmPassword: string }>({
+  const [formData, setFormData] = useState<Omit<User, "id"> & { confirmPassword: string }>({
     email: "",
     password: "",
     confirmPassword: "",
@@ -52,7 +52,12 @@ export default function Register() {
       });
     } else {
       const { confirmPassword, ...userWithoutConfirmPassword } = formData;
-      users.push(userWithoutConfirmPassword);
+      const newId = users.length > 0 ? String(Number(users[users.length - 1].id) + 1) : "1";
+      const newUser: User = {
+        ...userWithoutConfirmPassword,
+        id: newId,
+      };
+      users.push(newUser);
       localStorage.setItem("users", JSON.stringify(users));
       toast({
         title: "Success",

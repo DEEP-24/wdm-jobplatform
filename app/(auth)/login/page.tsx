@@ -9,13 +9,36 @@ import { useToast } from "@/hooks/use-toast";
 import { LockIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Hard-coded user for testing
+const testUser: User = {
+  id: "0",
+  firstName: "Test",
+  lastName: "User",
+  email: "test@app.com",
+  password: "password",
+  dob: "2000-01-01",
+  phoneNo: "1234567890",
+  street: "123 Main St",
+  city: "Anytown",
+  state: "CA",
+  zipcode: "12345",
+};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
+    if (!users.some((u) => u.email === testUser.email)) {
+      users.push(testUser);
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +112,11 @@ export default function Login() {
               Sign in
             </Button>
           </form>
+          <p className="mt-4 text-sm text-gray-600 text-center">
+            Test credentials: <br />
+            Email: test@app.com <br />
+            Password: password
+          </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="relative w-full">
