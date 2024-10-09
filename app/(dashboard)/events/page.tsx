@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Calendar, MapPin, Users, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Mock data for events and sessions
@@ -98,6 +98,7 @@ const eventsData = [
 
 export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<(typeof eventsData)[0] | null>(null);
+  const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleEventClick = (event: (typeof eventsData)[0]) => {
@@ -108,88 +109,139 @@ export default function EventsPage() {
     setSelectedEvent(null);
   };
 
-  const handleRegister = () => {
-    // Here you would typically make an API call to register the user
-    // For now, we'll just show a success toast
-    toast({
-      title: "Registration Successful",
-      description: "You have been registered for the event.",
-    });
+  const handleRegister = (sessionId: string) => {
+    // Here you would typically make an API call to register the user for the specific session
+    const session = selectedEvent?.sessions.find((s) => s.id === sessionId);
+    if (session) {
+      setRegisteredSessions((prev) => [...prev, sessionId]);
+      toast({
+        title: "Registration Successful",
+        description: `You have been registered for the session: ${session.title}`,
+      });
+    }
   };
 
   if (selectedEvent) {
     return (
-      <div className="p-4">
-        <Button variant="outline" className="mb-4" onClick={handleBackClick}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Events
-        </Button>
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{selectedEvent.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-4">{selectedEvent.description}</p>
-            <p className="text-sm font-semibold">
-              Date: {selectedEvent.startDate} to {selectedEvent.endDate}
-            </p>
-            <p className="text-sm font-semibold">Location: {selectedEvent.location}</p>
-            <p className="text-sm font-semibold">Type: {selectedEvent.eventType}</p>
-            <p className="text-sm font-semibold">Max Attendees: {selectedEvent.maxAttendees}</p>
-            <p className="text-sm font-semibold">
-              Registration Deadline: {selectedEvent.registrationDeadline}
-            </p>
-          </CardContent>
-        </Card>
-        <h3 className="text-xl font-bold mb-4">Sessions</h3>
-        <ScrollArea className="h-[50vh]">
-          {selectedEvent.sessions.map((session) => (
-            <Card key={session.id} className="mb-4">
-              <CardHeader>
-                <CardTitle className="text-lg">{session.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-2">{session.description}</p>
-                <p className="text-sm font-semibold">
-                  Time: {new Date(session.startTime).toLocaleString()} -{" "}
-                  {new Date(session.endTime).toLocaleString()}
-                </p>
-                <p className="text-sm font-semibold">Location: {session.location}</p>
-                <p className="text-sm font-semibold">Max Attendees: {session.maxAttendees}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </ScrollArea>
-        <Button
-          className="w-full mt-4 bg-black text-white hover:bg-gray-800"
-          onClick={() => handleRegister()}
-        >
-          Register for Event
-        </Button>
+      <div className="w-full">
+        <div className="bg-gray-100 p-4 mb-6">
+          <div className="max-w-7xl mx-auto">
+            <Button variant="ghost" className="hover:bg-gray-200" onClick={handleBackClick}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Events
+            </Button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4">
+          <Card className="mb-8 shadow-lg">
+            <CardHeader className="bg-gray-900 text-white">
+              <CardTitle className="text-2xl md:text-3xl">{selectedEvent.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-gray-600 mb-6">{selectedEvent.description}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-gray-700" />
+                  <p className="text-sm">
+                    {selectedEvent.startDate} to {selectedEvent.endDate}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-2 text-gray-700" />
+                  <p className="text-sm">{selectedEvent.location}</p>
+                </div>
+                <div className="flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-gray-700" />
+                  <p className="text-sm">Max Attendees: {selectedEvent.maxAttendees}</p>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 mr-2 text-gray-700" />
+                  <p className="text-sm">Deadline: {selectedEvent.registrationDeadline}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <h3 className="text-2xl font-bold mb-6">Sessions</h3>
+          <ScrollArea className="h-[60vh]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {selectedEvent.sessions.map((session) => (
+                <Card key={session.id} className="shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader className="bg-gray-300">
+                    <CardTitle className="text-lg">{session.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-gray-600 mb-4">{session.description}</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                        <p className="text-sm">
+                          {new Date(session.startTime).toLocaleString()} -{" "}
+                          {new Date(session.endTime).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                        <p className="text-sm">{session.location}</p>
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-gray-500" />
+                        <p className="text-sm">Max Attendees: {session.maxAttendees}</p>
+                      </div>
+                    </div>
+                    <Button
+                      className="mt-4 w-full bg-gray-900 hover:bg-gray-800 text-white"
+                      onClick={() => handleRegister(session.id)}
+                      disabled={registeredSessions.includes(session.id)}
+                    >
+                      {registeredSessions.includes(session.id)
+                        ? "Registered"
+                        : "Register for Session"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-full p-4">
-      {eventsData.map((event) => (
-        <Card
-          key={event.id}
-          className="mb-4 cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleEventClick(event)}
-        >
-          <CardHeader>
-            <CardTitle>{event.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-            <p className="text-sm font-semibold">
-              Date: {event.startDate} to {event.endDate}
-            </p>
-            <p className="text-sm font-semibold">Location: {event.location}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </ScrollArea>
+    <div className="w-full">
+      <div className="bg-gray-100 p-4 mb-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold">Upcoming Events</h2>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {eventsData.map((event) => (
+            <Card
+              key={event.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"
+              onClick={() => handleEventClick(event)}
+            >
+              <CardHeader className="bg-gray-300">
+                <CardTitle>{event.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <p className="text-gray-600 mb-4">{event.description}</p>
+                <div className="flex items-center mb-2">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <p className="text-sm">
+                    {event.startDate} to {event.endDate}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                  <p className="text-sm">{event.location}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

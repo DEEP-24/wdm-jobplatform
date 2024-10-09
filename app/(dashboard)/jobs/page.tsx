@@ -1,17 +1,18 @@
 "use client";
 
-import { PageHeading } from "@/app/(dashboard)/_components/page-heading";
+import type { Job } from "@/app/types/job";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import React, { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// Mock data for jobs
-const jobsData = [
+// Update the jobsData to match the Job type
+const jobsData: Job[] = [
   {
-    id: 1,
+    id: "1", // Change to string to match the Job type
     title: "Full Stack Developer",
     company: "Google",
     description:
@@ -23,7 +24,7 @@ const jobsData = [
     jobType: "onsite",
   },
   {
-    id: 2,
+    id: "2", // Change to string to match the Job type
     title: "UI/UX Developer",
     company: "BCBS",
     description:
@@ -35,7 +36,7 @@ const jobsData = [
     jobType: "remote",
   },
   {
-    id: 3,
+    id: "3", // Change to string to match the Job type
     title: "Web Developer Intern",
     company: "ElderCareConnect Inc.",
     description:
@@ -47,7 +48,7 @@ const jobsData = [
     jobType: "hybrid",
   },
   {
-    id: 4,
+    id: "4", // Change to string to match the Job type
     title: "React Developer",
     company: "meta",
     description:
@@ -59,7 +60,7 @@ const jobsData = [
     jobType: "remote",
   },
   {
-    id: 5,
+    id: "5", // Change to string to match the Job type
     title: "Web Developer",
     company: "IBM",
     description:
@@ -73,8 +74,38 @@ const jobsData = [
 ];
 
 export default function JobsPage() {
-  const [selectedJob, setSelectedJob] = useState(jobsData[0]);
+  const [selectedJob, setSelectedJob] = useState<Job>(jobsData[0]);
   const [showJobList, setShowJobList] = useState(true);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const savedJobs: Job[] = JSON.parse(localStorage.getItem("savedJobs") || "[]");
+    setSavedJobIds(new Set(savedJobs.map((job) => job.id)));
+  }, []);
+
+  const saveJob = (job: Job) => {
+    const savedJobs: Job[] = JSON.parse(localStorage.getItem("savedJobs") || "[]");
+    if (!savedJobIds.has(job.id)) {
+      savedJobs.push(job);
+      localStorage.setItem("savedJobs", JSON.stringify(savedJobs));
+      setSavedJobIds((prevIds) => {
+        const newIds = new Set(prevIds);
+        newIds.add(job.id);
+        return newIds;
+      });
+      toast({
+        title: "Job Saved",
+        description: "The job has been added to your saved list.",
+      });
+    } else {
+      toast({
+        title: "Job Already Saved",
+        description: "This job is already in your saved list.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-full">
@@ -138,7 +169,13 @@ export default function JobsPage() {
         <p className="text-gray-700 mb-6">{selectedJob.fullDescription}</p>
         <div className="flex items-center">
           <Button className="mr-4 bg-black text-white hover:bg-gray-800">Apply</Button>
-          <Button variant="outline">Save</Button>
+          <Button
+            variant={savedJobIds.has(selectedJob.id) ? "secondary" : "outline"}
+            onClick={() => saveJob(selectedJob)}
+            disabled={savedJobIds.has(selectedJob.id)}
+          >
+            {savedJobIds.has(selectedJob.id) ? "Already Saved" : "Save"}
+          </Button>
         </div>
       </div>
     </div>

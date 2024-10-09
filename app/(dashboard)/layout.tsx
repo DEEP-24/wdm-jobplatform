@@ -23,6 +23,7 @@ import {
   UsersIcon,
   Menu,
   X,
+  BookmarkIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,11 @@ const navItems = [
   { name: "Resources", icon: FileTextIcon, href: "/resources" },
   { name: "Career Development", icon: GraduationCapIcon, href: "/career" },
   { name: "Networking", icon: NetworkIcon, href: "/networking" },
+  {
+    name: "Saved Jobs",
+    icon: BriefcaseIcon,
+    href: "/saved-jobs",
+  },
 ];
 
 interface DashboardLayoutProps {
