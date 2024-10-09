@@ -8,13 +8,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const eventTypes = ["Conference", "Workshop", "Seminar"] as const;
+type EventType = (typeof eventTypes)[number];
 
 interface EventForm {
   title: string;
   description: string;
-  eventType: string;
+  eventType: EventType;
   startDate: string;
   endDate: string;
   location: string;
@@ -84,7 +94,7 @@ export default function AddEventPage() {
     <div className="container mx-auto py-8">
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Add New Event</CardTitle>
+          <CardTitle className="text-3xl font-bold">Add New Academic Event</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -107,10 +117,28 @@ export default function AddEventPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="eventType">Event Type</Label>
-                  <Input
-                    id="eventType"
-                    {...register("eventType", { required: "Event type is required" })}
+                  <Controller
+                    name="eventType"
+                    control={control}
+                    rules={{ required: "Event type is required" }}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {eventTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
+                  {errors.eventType && (
+                    <p className="text-red-500 text-sm">{errors.eventType.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="location">Location</Label>
@@ -118,6 +146,9 @@ export default function AddEventPage() {
                     id="location"
                     {...register("location", { required: "Location is required" })}
                   />
+                  {errors.location && (
+                    <p className="text-red-500 text-sm">{errors.location.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="startDate">Start Date</Label>

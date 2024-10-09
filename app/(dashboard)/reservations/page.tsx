@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,7 @@ interface Reservation {
   eventStartDate: string;
   eventEndDate: string;
   eventLocation: string;
+  eventType: string;
   sessionId: string;
   sessionTitle: string;
   sessionDescription: string;
@@ -31,7 +33,7 @@ export default function ReservationsPage() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (currentUser) {
       const allReservations: Reservation[] = JSON.parse(
-        localStorage.getItem("reservations") || "[]",
+        localStorage.getItem("academicEventReservations") || "[]",
       );
       const userReservations = allReservations.filter((r) => r.userId === currentUser.id);
       setReservations(userReservations);
@@ -44,7 +46,7 @@ export default function ReservationsPage() {
 
     const allReservations: Reservation[] = JSON.parse(localStorage.getItem("reservations") || "[]");
     const updatedAllReservations = allReservations.filter((r) => r.id !== reservationId);
-    localStorage.setItem("reservations", JSON.stringify(updatedAllReservations));
+    localStorage.setItem("academicEventReservations", JSON.stringify(updatedAllReservations));
 
     toast({
       title: "Reservation Cancelled",
@@ -66,8 +68,11 @@ export default function ReservationsPage() {
               {reservations.map((reservation) => (
                 <Card key={reservation.id} className="flex flex-col">
                   <CardHeader>
-                    <CardTitle className="text-xl font-semibold">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
                       {reservation.eventTitle}
+                      <Badge variant="default" className="ml-2">
+                        {reservation.eventType}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow space-y-4">

@@ -36,7 +36,7 @@ const navItems = [
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
   { name: "Manage Applications", icon: FileTextIcon, href: "/manage-applications" },
   { name: "Add Event", icon: PlusIcon, href: "/add-event" },
-  { name: "Events", icon: CalendarIcon, href: "/events" },
+  { name: "Academic Events", icon: CalendarIcon, href: "/academic-events" },
   { name: "Reservations", icon: CalendarIcon, href: "/reservations" },
   { name: "Mentorship Programs", icon: TargetIcon, href: "/mentorship-programs" },
   { name: "Mentors", icon: Users2Icon, href: "/mentors" },

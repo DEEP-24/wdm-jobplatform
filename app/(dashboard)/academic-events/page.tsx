@@ -1,19 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, Calendar, MapPin, Users, Clock, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
+import { Calendar, ChevronLeft, Clock, MapPin, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface Event {
+interface AcademicEvent {
   id: string;
   title: string;
   description: string;
-  eventType: string;
+  eventType: "Conference" | "Workshop" | "Seminar";
   startDate: string;
   endDate: string;
   location: string;
@@ -33,35 +41,35 @@ interface Event {
   }[];
 }
 
-const defaultEvents: Event[] = [
+const defaultEvents: AcademicEvent[] = [
   {
     id: "1",
-    title: "Tech Conference 2024",
-    description: "Annual gathering of tech enthusiasts and industry leaders.",
+    title: "AI in Academia Conference 2024",
+    description: "Annual gathering of AI researchers and academics.",
     eventType: "Conference",
     startDate: "2024-11-15",
     endDate: "2024-11-17",
-    location: "San Francisco, CA",
+    location: "Stanford University, CA",
     isVirtual: false,
-    maxAttendees: 1000,
+    maxAttendees: 500,
     registrationDeadline: "2024-11-01",
     status: "Upcoming",
     sessions: [
       {
         id: "101",
         eventId: "1",
-        title: "Keynote: Future of AI",
-        description: "Opening keynote discussing the future of Artificial Intelligence.",
+        title: "Keynote: Future of AI in Education",
+        description: "Opening keynote discussing the impact of AI on education.",
         startTime: "2024-11-15T09:00:00",
         endTime: "2024-11-15T10:30:00",
-        location: "Main Hall",
-        maxAttendees: 1000,
+        location: "Main Auditorium",
+        maxAttendees: 500,
       },
       {
         id: "102",
         eventId: "1",
-        title: "Workshop: Blockchain Basics",
-        description: "Hands-on workshop introducing blockchain technology.",
+        title: "Workshop: Implementing AI in Curriculum",
+        description: "Hands-on workshop on integrating AI into academic curricula.",
         startTime: "2024-11-15T11:00:00",
         endTime: "2024-11-15T13:00:00",
         location: "Workshop Room A",
@@ -71,55 +79,60 @@ const defaultEvents: Event[] = [
   },
   {
     id: "2",
-    title: "AI Symposium",
-    description: "Exploring cutting-edge advancements in Artificial Intelligence.",
-    eventType: "Symposium",
+    title: "Data Science in Research Symposium",
+    description: "Exploring the role of data science in academic research.",
+    eventType: "Conference",
     startDate: "2024-12-05",
     endDate: "2024-12-07",
-    location: "New York, NY",
+    location: "MIT, Cambridge, MA",
     isVirtual: false,
-    maxAttendees: 500,
+    maxAttendees: 300,
     registrationDeadline: "2024-11-20",
     status: "Upcoming",
     sessions: [
       {
         id: "201",
         eventId: "2",
-        title: "Machine Learning in Practice",
-        description: "Real-world applications of machine learning algorithms.",
+        title: "Data Visualization Techniques",
+        description: "Advanced techniques for visualizing complex research data.",
         startTime: "2024-12-05T10:00:00",
         endTime: "2024-12-05T12:00:00",
         location: "Lecture Hall 1",
-        maxAttendees: 200,
+        maxAttendees: 100,
       },
     ],
   },
 ];
 
-export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+const eventTypes = ["Conference", "Workshop", "Seminar"] as const;
+type EventType = (typeof eventTypes)[number];
+
+export default function AcademicEventsPage() {
+  const [events, setEvents] = useState<AcademicEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+  const [selectedType, setSelectedType] = useState<EventType | "All">("All");
 
   useEffect(() => {
     // Load events from localStorage
-    let storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+    let storedEvents = JSON.parse(localStorage.getItem("academicEvents") || "[]");
 
     // Check if default events are already in stored events
     const defaultEventIds = defaultEvents.map((event) => event.id);
-    const existingDefaultEvents = storedEvents.filter((event: Event) =>
+    const existingDefaultEvents = storedEvents.filter((event: AcademicEvent) =>
       defaultEventIds.includes(event.id),
     );
 
     // If some default events are missing, add them
     if (existingDefaultEvents.length < defaultEvents.length) {
       const missingDefaultEvents = defaultEvents.filter(
-        (event: Event) => !storedEvents.some((storedEvent: Event) => storedEvent.id === event.id),
+        (event: AcademicEvent) =>
+          !storedEvents.some((storedEvent: AcademicEvent) => storedEvent.id === event.id),
       );
       storedEvents = [...storedEvents, ...missingDefaultEvents];
-      localStorage.setItem("events", JSON.stringify(storedEvents));
+      localStorage.setItem("academicEvents", JSON.stringify(storedEvents));
     }
 
     setEvents(storedEvents);
@@ -127,13 +140,13 @@ export default function EventsPage() {
     // Load user's registered sessions
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (currentUser) {
-      const reservations = JSON.parse(localStorage.getItem("reservations") || "[]");
+      const reservations = JSON.parse(localStorage.getItem("academicEventReservations") || "[]");
       const userReservations = reservations.filter((r: any) => r.userId === currentUser.id);
       setRegisteredSessions(userReservations.map((r: any) => r.sessionId));
     }
   }, []);
 
-  const handleEventClick = (event: Event) => {
+  const handleEventClick = (event: AcademicEvent) => {
     setSelectedEvent(event);
   };
 
@@ -156,8 +169,8 @@ export default function EventsPage() {
 
       if (registeredSessions.includes(sessionId)) {
         toast({
-          title: "Already Reserved",
-          description: "You have already reserved this session.",
+          title: "Already Registered",
+          description: "You have already registered for this session.",
           variant: "default",
         });
         return;
@@ -169,6 +182,7 @@ export default function EventsPage() {
         eventId: selectedEvent.id,
         eventTitle: selectedEvent.title,
         eventDescription: selectedEvent.description,
+        eventType: selectedEvent.eventType,
         eventStartDate: selectedEvent.startDate,
         eventEndDate: selectedEvent.endDate,
         eventLocation: selectedEvent.location,
@@ -180,9 +194,9 @@ export default function EventsPage() {
         sessionLocation: session.location,
       };
 
-      const reservations = JSON.parse(localStorage.getItem("reservations") || "[]");
+      const reservations = JSON.parse(localStorage.getItem("academicEventReservations") || "[]");
       reservations.push(reservation);
-      localStorage.setItem("reservations", JSON.stringify(reservations));
+      localStorage.setItem("academicEventReservations", JSON.stringify(reservations));
 
       setRegisteredSessions((prev) => [...prev, sessionId]);
       toast({
@@ -195,8 +209,11 @@ export default function EventsPage() {
   };
 
   const handleAddEvent = () => {
-    router.push("/add-event");
+    router.push("/add-academic-event");
   };
+
+  const filteredEvents =
+    selectedType === "All" ? events : events.filter((event) => event.eventType === selectedType);
 
   if (selectedEvent) {
     return (
@@ -236,6 +253,7 @@ export default function EventsPage() {
                   <p className="text-sm">Deadline: {selectedEvent.registrationDeadline}</p>
                 </div>
               </div>
+              <Badge className="mt-4">{selectedEvent.eventType}</Badge>
             </CardContent>
           </Card>
           <h3 className="text-2xl font-bold mb-6">Sessions</h3>
@@ -271,7 +289,7 @@ export default function EventsPage() {
                       disabled={registeredSessions.includes(session.id)}
                     >
                       {registeredSessions.includes(session.id)
-                        ? "Already Reserved"
+                        ? "Already Registered"
                         : "Register for Session"}
                     </Button>
                   </CardContent>
@@ -288,24 +306,47 @@ export default function EventsPage() {
     <div className="w-full">
       <div className="bg-gray-100 p-4 mb-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h2 className="text-3xl font-bold">Upcoming Events</h2>
-          <Button onClick={handleAddEvent}>
-            <Plus className="mr-2 h-4 w-4" /> Add Event
-          </Button>
+          <h2 className="text-3xl font-bold">Upcoming Academic Events</h2>
+          <div className="flex items-center space-x-4">
+            <Select
+              onValueChange={(value) => setSelectedType(value as EventType | "All")}
+              defaultValue="All"
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select event type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Types</SelectItem>
+                {eventTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddEvent}>
+              <Plus className="mr-2 h-4 w-4" /> Add Event
+            </Button>
+          </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <Card
               key={event.id}
               className="cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"
               onClick={() => handleEventClick(event)}
             >
               <CardHeader className="bg-gray-300">
-                <CardTitle>{event.title}</CardTitle>
+                <div className="flex justify-between items-start">
+                  <CardTitle>{event.title}</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-4">
+                <Badge variant="default" className="mb-1">
+                  {event.eventType}
+                </Badge>
                 <p className="text-gray-600 mb-4">{event.description}</p>
                 <div className="flex items-center mb-2">
                   <Calendar className="h-4 w-4 mr-2 text-gray-500" />
@@ -313,7 +354,7 @@ export default function EventsPage() {
                     {event.startDate} to {event.endDate}
                   </p>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center mb-2">
                   <MapPin className="h-4 w-4 mr-2 text-gray-500" />
                   <p className="text-sm">{event.location}</p>
                 </div>
