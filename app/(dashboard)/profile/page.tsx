@@ -48,11 +48,6 @@ export default function ProfilePage() {
     },
   });
 
-  const watchedState = useWatch({
-    control: form.control,
-    name: "state",
-  });
-
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
@@ -277,9 +272,6 @@ export default function ProfilePage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Current state: {watchedState || "None selected"}
-                        </FormDescription>
                       </FormItem>
                     )}
                   />
