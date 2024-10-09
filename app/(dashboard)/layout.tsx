@@ -33,11 +33,10 @@ const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
   { name: "Events", icon: CalendarIcon, href: "/events" },
-  { name: "Mentorship Programs", icon: UsersIcon, href: "/dashboard/mentorship" },
-  { name: "Resources", icon: FileTextIcon, href: "/dashboard/resources" },
-  { name: "Profile", icon: UserIcon, href: "/dashboard/profile" },
-  { name: "Career Development", icon: GraduationCapIcon, href: "/dashboard/career" },
-  { name: "Networking", icon: NetworkIcon, href: "/dashboard/networking" },
+  { name: "Mentorship Programs", icon: UsersIcon, href: "/mentorship-programs" },
+  { name: "Resources", icon: FileTextIcon, href: "/resources" },
+  { name: "Career Development", icon: GraduationCapIcon, href: "/career" },
+  { name: "Networking", icon: NetworkIcon, href: "/networking" },
 ];
 
 interface DashboardLayoutProps {
@@ -61,10 +60,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
-    toast({
-      title: "Success",
-      description: "You have successfully logged out.",
-    });
     router.push("/login");
   };
 
@@ -136,7 +131,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="shadow-lg rounded-md">
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile" className="flex items-center">
+                <Link href="/profile" className="flex items-center">
                   <UserPenIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </Link>

@@ -23,10 +23,6 @@ export default function Login() {
     const user = users.find((u: User) => u.email === email && u.password === password);
     if (user) {
       localStorage.setItem("currentUser", JSON.stringify(user));
-      toast({
-        title: "Success",
-        description: "You have successfully logged in.",
-      });
       router.push("/");
     } else {
       toast({
