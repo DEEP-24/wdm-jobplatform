@@ -25,7 +25,7 @@ export default function FollowersPage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-4">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Your Followers</CardTitle>

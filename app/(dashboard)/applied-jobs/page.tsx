@@ -31,17 +31,17 @@ export default function AppliedJobsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Applied Jobs</h1>
-        <div className="flex space-x-4">
-          <Button asChild>
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Applied Jobs</h1>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/career-development#resume">Resume Writing Tips</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/career-development#interview">Interview Preparation</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/mentors">Find a Mentor</Link>
           </Button>
         </div>
@@ -53,12 +53,12 @@ export default function AppliedJobsPage() {
             {applications.map((application) => (
               <Card key={application.id} className="w-full">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold">
+                  <CardTitle className="text-lg sm:text-xl font-bold">
                     {application.jobTitle || "Untitled Job"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Submitted</p>
                       <p>{new Date(application.submittedAt).toLocaleDateString()}</p>

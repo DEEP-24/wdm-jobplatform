@@ -169,27 +169,27 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Job Opportunities</h1>
-        <div className="flex space-x-4">
-          <Button asChild>
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Job Opportunities</h1>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/career-development">Explore Career Resources</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/mentors">Find a Mentor</Link>
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row h-full">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-200px)]">
         {/* Job listings */}
         <div
           className={`w-full md:w-1/3 border-r border-gray-200 overflow-hidden ${
             showJobList ? "block" : "hidden md:block"
           }`}
         >
-          <ScrollArea className="h-full pr-4 [&>div]:!overflow-x-hidden [&>div>div]:!mr-0">
+          <ScrollArea className="h-full pr-4">
             {jobsData.map((job) => (
               <Card
                 key={job.id}
@@ -221,7 +221,7 @@ export default function JobsPage() {
 
         {/* Job details */}
         <div
-          className={`w-full md:w-2/3 p-6 overflow-auto ${
+          className={`w-full md:w-2/3 p-4 sm:p-6 overflow-auto ${
             showJobList ? "hidden md:block" : "block"
           }`}
         >

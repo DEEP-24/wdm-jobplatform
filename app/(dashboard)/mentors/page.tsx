@@ -63,21 +63,21 @@ export default function MentorsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Available Mentors</h1>
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Available Mentors</h1>
         {!isMentor && (
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/become-a-mentor">Become a Mentor</Link>
           </Button>
         )}
       </div>
 
       {mentors.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {mentors.map((mentor) => (
             <Card key={mentor.id} className="flex flex-col">
-              <CardHeader className="flex flex-row items-center gap-4">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={mentor.imageUrl} alt={mentor.name} />
                   <AvatarFallback>
@@ -88,7 +88,7 @@ export default function MentorsPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle>{mentor.name}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">{mentor.name}</CardTitle>
                   <p className="text-sm text-gray-500">
                     {mentor.title} at {mentor.company}
                   </p>

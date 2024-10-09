@@ -66,7 +66,7 @@ export default function NetworkingPage() {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-4">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Networking</CardTitle>

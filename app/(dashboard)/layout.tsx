@@ -33,6 +33,7 @@ const navItems = [
   { name: "Home", icon: HomeIcon, href: "/" },
   { name: "Jobs", icon: BriefcaseIcon, href: "/jobs" },
   { name: "Events", icon: CalendarIcon, href: "/events" },
+  { name: "Reservations", icon: CalendarIcon, href: "/reservations" },
   { name: "Mentorship Programs", icon: TargetIcon, href: "/mentorship-programs" },
   { name: "Mentors", icon: Users2Icon, href: "/mentors" },
   { name: "Resources", icon: FileTextIcon, href: "/resources" },

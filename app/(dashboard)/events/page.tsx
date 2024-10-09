@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, Calendar, MapPin, Users, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 
 // Mock data for events and sessions
 const eventsData = [
@@ -100,6 +102,16 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<(typeof eventsData)[0] | null>(null);
   const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    if (currentUser) {
+      const reservations = JSON.parse(localStorage.getItem("reservations") || "[]");
+      const userReservations = reservations.filter((r: any) => r.userId === currentUser.id);
+      setRegisteredSessions(userReservations.map((r: any) => r.sessionId));
+    }
+  }, []);
 
   const handleEventClick = (event: (typeof eventsData)[0]) => {
     setSelectedEvent(event);
@@ -110,14 +122,55 @@ export default function EventsPage() {
   };
 
   const handleRegister = (sessionId: string) => {
-    // Here you would typically make an API call to register the user for the specific session
     const session = selectedEvent?.sessions.find((s) => s.id === sessionId);
-    if (session) {
+    if (session && selectedEvent) {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+      if (!currentUser) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to register for events.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (registeredSessions.includes(sessionId)) {
+        toast({
+          title: "Already Reserved",
+          description: "You have already reserved this session.",
+          variant: "default",
+        });
+        return;
+      }
+
+      const reservation = {
+        id: uuidv4(),
+        userId: currentUser.id,
+        eventId: selectedEvent.id,
+        eventTitle: selectedEvent.title,
+        eventDescription: selectedEvent.description,
+        eventStartDate: selectedEvent.startDate,
+        eventEndDate: selectedEvent.endDate,
+        eventLocation: selectedEvent.location,
+        sessionId: session.id,
+        sessionTitle: session.title,
+        sessionDescription: session.description,
+        sessionStartTime: session.startTime,
+        sessionEndTime: session.endTime,
+        sessionLocation: session.location,
+      };
+
+      const reservations = JSON.parse(localStorage.getItem("reservations") || "[]");
+      reservations.push(reservation);
+      localStorage.setItem("reservations", JSON.stringify(reservations));
+
       setRegisteredSessions((prev) => [...prev, sessionId]);
       toast({
         title: "Registration Successful",
         description: `You have been registered for the session: ${session.title}`,
       });
+
+      router.push("/reservations");
     }
   };
 
@@ -194,7 +247,7 @@ export default function EventsPage() {
                       disabled={registeredSessions.includes(session.id)}
                     >
                       {registeredSessions.includes(session.id)
-                        ? "Registered"
+                        ? "Already Reserved"
                         : "Register for Session"}
                     </Button>
                   </CardContent>
