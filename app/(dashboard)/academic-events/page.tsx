@@ -150,6 +150,7 @@ export default function AcademicEventsPage() {
   const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [expandedEvents, setExpandedEvents] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
 
   useEffect(() => {
     // Always create new default events based on the current date
@@ -169,10 +170,12 @@ export default function AcademicEventsPage() {
 
     setEvents(storedEvents);
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (currentUser) {
+    const storedUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    setCurrentUser(storedUser);
+
+    if (storedUser) {
       const reservations = JSON.parse(localStorage.getItem("academicEventReservations") || "[]");
-      const userReservations = reservations.filter((r: any) => r.userId === currentUser.id);
+      const userReservations = reservations.filter((r: any) => r.userId === storedUser.id);
       setRegisteredSessions(userReservations.map((r: any) => r.sessionId));
     }
   }, []);
@@ -275,9 +278,11 @@ export default function AcademicEventsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleAddEvent}>
-              <Plus className="mr-2 h-4 w-4" /> Add Event
-            </Button>
+            {currentUser?.role === "organizer" && (
+              <Button onClick={handleAddEvent}>
+                <Plus className="mr-2 h-4 w-4" /> Add Event
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -356,15 +361,17 @@ export default function AcademicEventsPage() {
                                   <MapPin className="h-4 w-4 mr-2 text-gray-500" />
                                   <p className="text-sm">{session.location}</p>
                                 </div>
-                                <Button
-                                  className="mt-2 w-full"
-                                  onClick={() => handleRegister(event.id, session.id)}
-                                  disabled={registeredSessions.includes(session.id)}
-                                >
-                                  {registeredSessions.includes(session.id)
-                                    ? "Already Registered"
-                                    : "Register for Session"}
-                                </Button>
+                                {currentUser?.role === "student" && (
+                                  <Button
+                                    className="mt-2 w-full"
+                                    onClick={() => handleRegister(event.id, session.id)}
+                                    disabled={registeredSessions.includes(session.id)}
+                                  >
+                                    {registeredSessions.includes(session.id)
+                                      ? "Already Registered"
+                                      : "Register for Session"}
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>

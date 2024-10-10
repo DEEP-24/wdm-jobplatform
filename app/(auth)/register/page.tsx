@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@/app/types/user";
+import type { User, UserRole } from "@/app/types/user";
 import { useRouter } from "next/navigation";
 import { LockIcon, MailIcon, UserIcon, CalendarIcon, PhoneIcon, MapPinIcon } from "lucide-react";
 import {
@@ -33,6 +33,7 @@ export default function Register() {
     city: "",
     state: "",
     zipcode: "",
+    role: "student" as UserRole,
   });
 
   const { toast } = useToast();
@@ -52,6 +53,10 @@ export default function Register() {
 
   const handlePrevStep = () => {
     setStep(step - 1);
+  };
+
+  const handleRoleChange = (value: UserRole) => {
+    setFormData({ ...formData, role: value });
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -324,6 +329,23 @@ export default function Register() {
                     value={formData.zipcode}
                     onChange={handleChange}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-sm font-medium text-gray-700">
+                    Role
+                  </Label>
+                  <Select onValueChange={handleRoleChange} value={formData.role}>
+                    <SelectTrigger className="bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="employer">Employer</SelectItem>
+                      <SelectItem value="organizer">Organizer</SelectItem>
+                      <SelectItem value="mentor">Mentor</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}

@@ -1,13 +1,16 @@
-export type User = {
+export type UserRole = "admin" | "employer" | "organizer" | "mentor" | "student";
+
+export interface User {
   id: string;
-  email: string;
-  password: string;
   firstName: string;
   lastName: string;
+  email: string;
+  password: string;
   dob: string;
   phoneNo: string;
   street: string;
   city: string;
   state: string;
   zipcode: string;
-};
+  role: UserRole;
+}

@@ -1,7 +1,6 @@
 "use client";
 
-import { USA_STATES } from "@/app/constants/usa-states";
-import type { User } from "@/app/types/user";
+import type { User, UserRole } from "@/app/types/user";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,20 +11,79 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Hard-coded user for testing
-const testUser: User = {
-  id: "0",
-  firstName: "Test",
-  lastName: "User",
-  email: "test@app.com",
-  password: "password",
-  dob: "2000-01-01",
-  phoneNo: "1234567890",
-  street: "123 Main St",
-  city: "Anytown",
-  state: "CA",
-  zipcode: "12345",
-};
+// Hard-coded users for testing
+const testUsers: User[] = [
+  {
+    id: "1",
+    firstName: "Admin",
+    lastName: "User",
+    email: "admin@app.com",
+    password: "password",
+    dob: "1990-01-01",
+    phoneNo: "1234567890",
+    street: "123 Admin St",
+    city: "Admin City",
+    state: "CA",
+    zipcode: "12345",
+    role: "admin" as UserRole,
+  },
+  {
+    id: "2",
+    firstName: "Employer",
+    lastName: "User",
+    email: "employer@app.com",
+    password: "password",
+    dob: "1985-05-15",
+    phoneNo: "2345678901",
+    street: "456 Employer Ave",
+    city: "Employer City",
+    state: "NY",
+    zipcode: "23456",
+    role: "employer" as UserRole,
+  },
+  {
+    id: "3",
+    firstName: "Organizer",
+    lastName: "User",
+    email: "organizer@app.com",
+    password: "password",
+    dob: "1988-09-20",
+    phoneNo: "3456789012",
+    street: "789 Organizer Blvd",
+    city: "Organizer City",
+    state: "TX",
+    zipcode: "34567",
+    role: "organizer" as UserRole,
+  },
+  {
+    id: "4",
+    firstName: "Mentor",
+    lastName: "User",
+    email: "mentor@app.com",
+    password: "password",
+    dob: "1982-03-10",
+    phoneNo: "4567890123",
+    street: "101 Mentor Rd",
+    city: "Mentor City",
+    state: "FL",
+    zipcode: "45678",
+    role: "mentor" as UserRole,
+  },
+  {
+    id: "5",
+    firstName: "Student",
+    lastName: "User",
+    email: "student@app.com",
+    password: "password",
+    dob: "2000-07-30",
+    phoneNo: "5678901234",
+    street: "202 Student Ln",
+    city: "Student City",
+    state: "IL",
+    zipcode: "56789",
+    role: "student" as UserRole,
+  },
+];
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -34,10 +92,12 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
-    if (!users.some((u) => u.email === testUser.email)) {
-      users.push(testUser);
-      localStorage.setItem("users", JSON.stringify(users));
+    const storedUsers: User[] = JSON.parse(localStorage.getItem("users") || "[]");
+    const newUsers = testUsers.filter(
+      (testUser) => !storedUsers.some((storedUser) => storedUser.email === testUser.email),
+    );
+    if (newUsers.length > 0) {
+      localStorage.setItem("users", JSON.stringify([...storedUsers, ...newUsers]));
     }
   }, []);
 
@@ -113,11 +173,11 @@ export default function Login() {
               Sign in
             </Button>
           </form>
-          <p className="mt-4 text-sm text-gray-600 text-center">
-            Test credentials: <br />
-            Email: test@app.com <br />
-            Password: password
-          </p>
+          <div className="mt-4 text-sm text-gray-600 flex flex-col items-center justify-center">
+            <p className="font-semibold">Testing credentials:</p>
+            <p>Email: admin@app.com</p>
+            <p>Password: password</p>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="relative w-full">

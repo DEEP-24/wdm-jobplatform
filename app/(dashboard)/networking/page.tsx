@@ -20,6 +20,7 @@ export default function NetworkingPage() {
       localStorage.getItem(`following_${storedCurrentUser?.id}`) || "[]",
     );
 
+    // Filter out the current user from the list of users
     setUsers(storedUsers.filter((user: User) => user.id !== storedCurrentUser?.id));
     setCurrentUser(storedCurrentUser);
     setFollowingIds(storedFollowingIds);

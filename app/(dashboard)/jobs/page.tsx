@@ -24,7 +24,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -112,11 +113,12 @@ interface JobApplication {
   workMode: string;
 }
 
-interface CurrentUser {
+interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
 }
 
 export default function JobsPage() {
@@ -128,7 +130,7 @@ export default function JobsPage() {
   const [jobTypeFilter, setJobTypeFilter] = useState<JobType | "all">("all");
   const { toast } = useToast();
   const { register, handleSubmit, reset } = useForm();
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const isLargeDevice = useMediaQuery("(min-width: 768px)");
 
@@ -164,11 +166,9 @@ export default function JobsPage() {
     setAppliedJobIds(new Set(appliedJobs.map((app) => app.jobID)));
 
     // Load current user from localStorage
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-  }, [isLargeDevice]); // Add isLargeDevice as a dependency
+    const storedUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    setCurrentUser(storedUser);
+  }, [isLargeDevice]);
 
   useEffect(() => {
     // Update selectedJob when jobTypeFilter changes (only for medium and large devices)
@@ -266,11 +266,13 @@ export default function JobsPage() {
               <SelectItem value="internship">Internships</SelectItem>
             </SelectContent>
           </Select>
-          {/* <Button asChild className="w-full sm:w-auto">
-            <Link href="/add-job">
-              <Plus className="mr-2 h-4 w-4" /> Add Job
-            </Link>
-          </Button> */}
+          {currentUser?.role === "employer" && (
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/add-job">
+                <Plus className="mr-2 h-4 w-4" /> Add Job
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -348,83 +350,88 @@ export default function JobsPage() {
                 </div>
               </div>
               <p className="text-gray-700 mb-6">{selectedJob.fullDescription}</p>
-              <div className="flex items-center">
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      className="mr-4 bg-black text-white hover:bg-gray-800"
-                      disabled={appliedJobIds.has(selectedJob.id)}
-                    >
-                      {appliedJobIds.has(selectedJob.id) ? "Applied" : "Apply"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Apply for {selectedJob.title}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4">
-                      <div>
-                        <Label htmlFor="applicantName">Full Name</Label>
-                        <Input
-                          id="applicantName"
-                          value={
-                            currentUser
-                              ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-                              : ""
-                          }
-                          disabled
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="applicantEmail">Email</Label>
-                        <Input
-                          id="applicantEmail"
-                          type="email"
-                          value={currentUser?.email || ""}
-                          disabled
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="resumeURL">Resume URL</Label>
-                        <Input id="resumeURL" {...register("resumeURL")} required />
-                      </div>
-                      <div>
-                        <Label htmlFor="coverLetterURL">Cover Letter URL</Label>
-                        <Input id="coverLetterURL" {...register("coverLetterURL")} />
-                      </div>
-                      <div>
-                        <Label htmlFor="linkedinURL">LinkedIn URL</Label>
-                        <Input id="linkedinURL" {...register("linkedinURL")} />
-                      </div>
-                      <div>
-                        <Label htmlFor="additionalDocuments">Additional Documents</Label>
-                        <Input id="additionalDocuments" {...register("additionalDocumentsR2URL")} />
-                      </div>
-                      <div>
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" {...register("notes")} />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit">Submit Application</Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant={savedJobIds.has(selectedJob.id) ? "secondary" : "outline"}
-                  onClick={() => saveJob(selectedJob)}
-                  disabled={savedJobIds.has(selectedJob.id)}
-                >
-                  {savedJobIds.has(selectedJob.id) ? "Saved" : "Save"}
-                </Button>
-              </div>
+              {currentUser?.role === "student" && (
+                <div className="flex items-center">
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="mr-4 bg-black text-white hover:bg-gray-800"
+                        disabled={appliedJobIds.has(selectedJob.id)}
+                      >
+                        {appliedJobIds.has(selectedJob.id) ? "Applied" : "Apply"}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Apply for {selectedJob.title}</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4">
+                        <div>
+                          <Label htmlFor="applicantName">Full Name</Label>
+                          <Input
+                            id="applicantName"
+                            value={
+                              currentUser
+                                ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+                                : ""
+                            }
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="applicantEmail">Email</Label>
+                          <Input
+                            id="applicantEmail"
+                            type="email"
+                            value={currentUser?.email || ""}
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="resumeURL">Resume URL</Label>
+                          <Input id="resumeURL" {...register("resumeURL")} required />
+                        </div>
+                        <div>
+                          <Label htmlFor="coverLetterURL">Cover Letter URL</Label>
+                          <Input id="coverLetterURL" {...register("coverLetterURL")} />
+                        </div>
+                        <div>
+                          <Label htmlFor="linkedinURL">LinkedIn URL</Label>
+                          <Input id="linkedinURL" {...register("linkedinURL")} />
+                        </div>
+                        <div>
+                          <Label htmlFor="additionalDocuments">Additional Documents</Label>
+                          <Input
+                            id="additionalDocuments"
+                            {...register("additionalDocumentsR2URL")}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="notes">Notes</Label>
+                          <Textarea id="notes" {...register("notes")} />
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsDialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit">Submit Application</Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant={savedJobIds.has(selectedJob.id) ? "secondary" : "outline"}
+                    onClick={() => saveJob(selectedJob)}
+                    disabled={savedJobIds.has(selectedJob.id)}
+                  >
+                    {savedJobIds.has(selectedJob.id) ? "Saved" : "Save"}
+                  </Button>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex items-center justify-center h-full">
