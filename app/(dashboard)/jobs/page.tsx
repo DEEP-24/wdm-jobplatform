@@ -334,10 +334,11 @@ export default function JobsPage() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Back to Jobs
               </Button>
-              <div className="mb-6">
+
+              <div className="mb-4 bg-white p-4 rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold">{selectedJob.title}</h2>
                 <p className="text-lg text-gray-600">{selectedJob.company}</p>
-                <div className="flex flex-wrap items-center mt-2">
+                <div className="flex flex-wrap items-center mt-5">
                   <Badge variant="outline" className="mr-2 mb-2">
                     {selectedJob.salary || "Salary not specified"}
                   </Badge>
@@ -348,90 +349,91 @@ export default function JobsPage() {
                     {selectedJob.postedAgo}
                   </span>
                 </div>
+
+                <p className="text-gray-700 mb-6 mt-4">{selectedJob.fullDescription}</p>
+                {currentUser?.role === "student" && (
+                  <div className="flex items-center">
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          className="mr-4 bg-black text-white hover:bg-gray-800"
+                          disabled={appliedJobIds.has(selectedJob.id)}
+                        >
+                          {appliedJobIds.has(selectedJob.id) ? "Applied" : "Apply"}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Apply for {selectedJob.title}</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4">
+                          <div>
+                            <Label htmlFor="applicantName">Full Name</Label>
+                            <Input
+                              id="applicantName"
+                              value={
+                                currentUser
+                                  ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+                                  : ""
+                              }
+                              disabled
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="applicantEmail">Email</Label>
+                            <Input
+                              id="applicantEmail"
+                              type="email"
+                              value={currentUser?.email || ""}
+                              disabled
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="resumeURL">Resume URL</Label>
+                            <Input id="resumeURL" {...register("resumeURL")} required />
+                          </div>
+                          <div>
+                            <Label htmlFor="coverLetterURL">Cover Letter URL</Label>
+                            <Input id="coverLetterURL" {...register("coverLetterURL")} />
+                          </div>
+                          <div>
+                            <Label htmlFor="linkedinURL">LinkedIn URL</Label>
+                            <Input id="linkedinURL" {...register("linkedinURL")} />
+                          </div>
+                          <div>
+                            <Label htmlFor="additionalDocuments">Additional Documents</Label>
+                            <Input
+                              id="additionalDocuments"
+                              {...register("additionalDocumentsR2URL")}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="notes">Notes</Label>
+                            <Textarea id="notes" {...register("notes")} />
+                          </div>
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setIsDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button type="submit">Submit Application</Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      variant={savedJobIds.has(selectedJob.id) ? "secondary" : "outline"}
+                      onClick={() => saveJob(selectedJob)}
+                      disabled={savedJobIds.has(selectedJob.id)}
+                    >
+                      {savedJobIds.has(selectedJob.id) ? "Saved" : "Save"}
+                    </Button>
+                  </div>
+                )}
               </div>
-              <p className="text-gray-700 mb-6">{selectedJob.fullDescription}</p>
-              {currentUser?.role === "student" && (
-                <div className="flex items-center">
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="mr-4 bg-black text-white hover:bg-gray-800"
-                        disabled={appliedJobIds.has(selectedJob.id)}
-                      >
-                        {appliedJobIds.has(selectedJob.id) ? "Applied" : "Apply"}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Apply for {selectedJob.title}</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4">
-                        <div>
-                          <Label htmlFor="applicantName">Full Name</Label>
-                          <Input
-                            id="applicantName"
-                            value={
-                              currentUser
-                                ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-                                : ""
-                            }
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="applicantEmail">Email</Label>
-                          <Input
-                            id="applicantEmail"
-                            type="email"
-                            value={currentUser?.email || ""}
-                            disabled
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="resumeURL">Resume URL</Label>
-                          <Input id="resumeURL" {...register("resumeURL")} required />
-                        </div>
-                        <div>
-                          <Label htmlFor="coverLetterURL">Cover Letter URL</Label>
-                          <Input id="coverLetterURL" {...register("coverLetterURL")} />
-                        </div>
-                        <div>
-                          <Label htmlFor="linkedinURL">LinkedIn URL</Label>
-                          <Input id="linkedinURL" {...register("linkedinURL")} />
-                        </div>
-                        <div>
-                          <Label htmlFor="additionalDocuments">Additional Documents</Label>
-                          <Input
-                            id="additionalDocuments"
-                            {...register("additionalDocumentsR2URL")}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="notes">Notes</Label>
-                          <Textarea id="notes" {...register("notes")} />
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsDialogOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button type="submit">Submit Application</Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    variant={savedJobIds.has(selectedJob.id) ? "secondary" : "outline"}
-                    onClick={() => saveJob(selectedJob)}
-                    disabled={savedJobIds.has(selectedJob.id)}
-                  >
-                    {savedJobIds.has(selectedJob.id) ? "Saved" : "Save"}
-                  </Button>
-                </div>
-              )}
             </>
           ) : (
             <div className="flex items-center justify-center h-full">

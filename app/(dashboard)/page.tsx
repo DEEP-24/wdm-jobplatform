@@ -18,6 +18,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useRouter } from "next/navigation";
 
 // Mock data for charts
 const attendeeData = [
@@ -39,17 +40,16 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const userString = localStorage.getItem("currentUser");
     if (userString) {
       setCurrentUser(JSON.parse(userString));
+    } else {
+      router.push("/login");
     }
   }, []);
-
-  if (!currentUser) {
-    return <div>Loading...</div>;
-  }
 
   const renderRoleSpecificContent = (role: UserRole) => {
     switch (role) {
@@ -66,16 +66,16 @@ export default function HomePage() {
                 </p>
                 <div className="mt-4 grid gap-4 grid-cols-2">
                   <Button asChild variant="outline" className="bg-black text-white">
-                    <Link href="/users">Manage Users</Link>
+                    <Link href="/">Manage Users</Link>
                   </Button>
                   <Button asChild variant="outline" className="bg-black text-white">
-                    <Link href="/events">Manage Events</Link>
+                    <Link href="/academic-events">Manage Events</Link>
                   </Button>
                   <Button asChild variant="outline" className="bg-black text-white">
                     <Link href="/jobs">Manage Jobs</Link>
                   </Button>
                   <Button asChild variant="outline" className="bg-black text-white">
-                    <Link href="/reports">View Reports</Link>
+                    <Link href="/">View Reports</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -189,7 +189,7 @@ export default function HomePage() {
                   <Link href="/mentorship-program">Mentorship Program</Link>
                 </Button>
                 <Button asChild variant="outline" className="bg-black text-white">
-                  <Link href="/schedule-session">Schedule Session</Link>
+                  <Link href="/">Schedule Session</Link>
                 </Button>
               </div>
             </CardContent>
@@ -201,7 +201,7 @@ export default function HomePage() {
             <Card className="bg-white text-black border border-gray-200">
               <CardHeader>
                 <CardTitle className="text-3xl font-bold">
-                  Welcome to GrowthLink, {currentUser.firstName} {currentUser.lastName}!
+                  Welcome to GrowthLink, {currentUser?.firstName} {currentUser?.lastName}!
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -366,5 +366,7 @@ export default function HomePage() {
     }
   };
 
-  return <div className="space-y-6">{renderRoleSpecificContent(currentUser.role)}</div>;
+  return (
+    <div className="space-y-6">{renderRoleSpecificContent(currentUser?.role || "student")}</div>
+  );
 }
