@@ -175,8 +175,33 @@ export default function Login() {
           </form>
           <div className="mt-4 text-sm text-gray-600 flex flex-col items-center justify-center">
             <p className="font-semibold">Testing credentials:</p>
-            <p>Email: admin@app.com</p>
-            <p>Password: password</p>
+            <div className="flex flex-col items-center gap-2 justify-center">
+              <div className="flex items-center gap-2 justify-center">
+                <p className="font-semibold">Role: Admin</p>
+                <p>admin@app.com</p>
+                <p>password</p>
+              </div>
+              <div className="flex items-center gap-2 justify-center">
+                <p className="font-semibold">Role: Employer</p>
+                <p>employer@app.com</p>
+                <p>password</p>
+              </div>
+              <div className="flex items-center gap-2 justify-center">
+                <p className="font-semibold">Role: Organizer</p>
+                <p>organizer@app.com</p>
+                <p>password</p>
+              </div>
+              <div className="flex items-center gap-2 justify-center">
+                <p className="font-semibold">Role: Mentor</p>
+                <p>mentor@app.com</p>
+                <p>password</p>
+              </div>
+              <div className="flex items-center gap-2 justify-center">
+                <p className="font-semibold">Role: Student</p>
+                <p>student@app.com</p>
+                <p>password</p>
+              </div>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
