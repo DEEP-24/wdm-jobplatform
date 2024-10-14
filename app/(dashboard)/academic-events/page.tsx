@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils"; // Make sure you have this utility function
+import { cn } from "@/lib/utils";
 import { addDays, format, isSameDay, parseISO } from "date-fns";
 import { ChevronDown, ChevronUp, Clock, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -150,7 +150,10 @@ export default function AcademicEventsPage() {
   const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [expandedEvents, setExpandedEvents] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    role: string;
+  } | null>(null);
 
   useEffect(() => {
     // Always create new default events based on the current date

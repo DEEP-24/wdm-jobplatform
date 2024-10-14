@@ -4,35 +4,33 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
-	src: "./fonts/GeistVF.woff",
-	variable: "--font-geist-sans",
-	weight: "100 900",
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
 });
 const geistMono = localFont({
-	src: "./fonts/GeistMonoVF.woff",
-	variable: "--font-geist-mono",
-	weight: "100 900",
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
 });
 
 export const metadata: Metadata = {
-	title: "GrowthLink",
-	description:
-		"GrowthLink is a platform for growing your network and looking for new opportunities.",
+  title: "GrowthLink",
+  description:
+    "GrowthLink is a platform for growing your network and looking for new opportunities.",
 };
 
 export default function RootLayout({
-	children,
+  children,
 }: Readonly<{
-	children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-	return (
-		<html lang="en">
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
-				{children}
-				<Toaster />
-			</body>
-		</html>
-	);
+  return (
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
+        <Toaster />
+      </body>
+    </html>
+  );
 }

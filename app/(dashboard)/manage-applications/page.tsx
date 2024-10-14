@@ -127,9 +127,6 @@ export default function ManageApplicationsPage() {
             ) : (
               <div className="text-center py-10">
                 <p className="text-xl font-semibold mb-4">No applications received yet</p>
-                <Link href="/post-job" className="text-blue-600 hover:underline">
-                  Post a new job
-                </Link>
               </div>
             )}
           </ScrollArea>
