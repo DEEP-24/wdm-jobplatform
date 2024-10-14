@@ -19,7 +19,14 @@ import {
   Cell,
 } from "recharts";
 import { useRouter } from "next/navigation";
-import { CalendarDaysIcon, FileTextIcon, NewspaperIcon, SendIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  FileTextIcon,
+  NewspaperIcon,
+  SendIcon,
+  MessageCircleIcon,
+} from "lucide-react";
+import ChatComponent from "@/app/(dashboard)/_components/chat";
 
 const attendeeData = [
   { month: "Jan", attendees: 400 },
@@ -80,6 +87,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
+      {/* Existing dashboard content */}
       <Card className="bg-white text-black border border-gray-200">
         <CardHeader>
           <CardTitle className="text-3xl font-bold">
@@ -311,6 +319,8 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      <ChatComponent />
     </div>
   );
 }
