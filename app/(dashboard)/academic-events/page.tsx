@@ -12,13 +12,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Montserrat, Open_Sans } from "next/font/google";
 import { addDays, format, isSameDay, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Clock, MapPin, Plus } from "lucide-react";
+import { Clock, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 interface AcademicEvent {
   id: string;
@@ -149,28 +168,19 @@ export default function AcademicEventsPage() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [expandedEvents, setExpandedEvents] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     role: string;
   } | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
 
   useEffect(() => {
-    // Always create new default events based on the current date
     const defaultEvents = createDefaultEvents();
-
-    // Check if there are any stored events
     let storedEvents = JSON.parse(localStorage.getItem("academicEvents") || "[]");
-
-    // If there are no stored events, or if we want to always use fresh data,
-    // use the default events
-    // biome-ignore lint/correctness/noConstantCondition: <explanation>
-    if (storedEvents.length === 0 || true) {
-      // Remove '|| true' if you want to keep stored events
+    if (storedEvents.length === 0) {
       storedEvents = defaultEvents;
       localStorage.setItem("academicEvents", JSON.stringify(storedEvents));
     }
-
     setEvents(storedEvents);
 
     const storedUser = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -242,12 +252,6 @@ export default function AcademicEventsPage() {
     router.push("/add-academic-event");
   };
 
-  const toggleEventExpansion = (eventId: string) => {
-    setExpandedEvents((prev) =>
-      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId],
-    );
-  };
-
   const filteredEvents =
     selectedType === "All" ? events : events.filter((event) => event.eventType === selectedType);
 
@@ -260,16 +264,16 @@ export default function AcademicEventsPage() {
   });
 
   return (
-    <div className="w-full">
-      <div className="bg-gray-100 p-4 mb-6">
+    <div className={`w-full ${openSans.className}`}>
+      <div className="bg-purple-700 text-white p-6 mb-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-4">
-          <h2 className="text-3xl font-bold">Upcoming Academic Events</h2>
+          <h2 className={`text-3xl font-bold ${montserrat.className}`}>Upcoming Academic Events</h2>
           <div className="flex items-center space-x-4 flex-wrap gap-4">
             <Select
               onValueChange={(value) => setSelectedType(value as EventType | "All")}
               defaultValue="All"
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white text-purple-900">
                 <SelectValue placeholder="Select event type" />
               </SelectTrigger>
               <SelectContent>
@@ -282,106 +286,151 @@ export default function AcademicEventsPage() {
               </SelectContent>
             </Select>
             {currentUser?.role === "organizer" && (
-              <Button onClick={handleAddEvent}>
+              <Button
+                onClick={handleAddEvent}
+                className="bg-white text-purple-700 hover:bg-purple-100"
+              >
                 <Plus className="mr-2 h-4 w-4" /> Add Event
               </Button>
             )}
           </div>
         </div>
       </div>
-      <div className="mx-auto px-4">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-1/3 flex justify-center items-start">
+      <div className="mx-auto px-4 max-w-7xl">
+        <div className="flex flex-col gap-6">
+          <div className="w-full flex justify-center">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               initialFocus
-              className={cn(
-                "rounded-md border",
-                "bg-white", // Ensure white background
-                "shadow-sm", // Add a subtle shadow for definition
-              )}
+              className={cn("rounded-md border", "bg-white", "shadow-md")}
             />
           </div>
-          <Card className="w-full md:w-2/3">
+          <Card className="w-full bg-white shadow-lg">
             <CardHeader>
-              <CardTitle>
+              <CardTitle className={`text-2xl ${montserrat.className}`}>
                 Events on {selectedDate && format(selectedDate, "MMMM d, yyyy")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[60vh]">
                 {calendarEvents.length > 0 ? (
-                  calendarEvents.map((event) => (
-                    <Card key={event.id} className="mb-3 hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          <span>{event.title}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleEventExpansion(event.id)}
-                          >
-                            {expandedEvents.includes(event.id) ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Badge variant="default" className="mb-2">
-                          {event.eventType}
-                        </Badge>
-                        <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                        <div className="flex items-center mb-2">
-                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                          <p className="text-sm">
-                            {event.startDate} to {event.endDate}
-                          </p>
-                        </div>
-                        <div className="flex items-center mb-2">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                          <p className="text-sm">{event.location}</p>
-                        </div>
-                        {expandedEvents.includes(event.id) && (
-                          <div className="mt-4">
-                            <h4 className="font-semibold mb-2">Sessions:</h4>
-                            {event.sessions.map((session) => (
-                              <div key={session.id} className="mb-4 p-4 bg-gray-50 rounded-md">
-                                <h5 className="font-medium">{session.title}</h5>
-                                <p className="text-sm text-gray-600 mb-2">{session.description}</p>
-                                <div className="flex items-center mb-2">
-                                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                                  <p className="text-sm">
-                                    {format(parseISO(session.startTime), "h:mm a")} -{" "}
-                                    {format(parseISO(session.endTime), "h:mm a")}
-                                  </p>
-                                </div>
-                                <div className="flex items-center mb-2">
-                                  <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                                  <p className="text-sm">{session.location}</p>
-                                </div>
-                                {currentUser?.role === "student" && (
-                                  <Button
-                                    className="mt-2 w-full"
-                                    onClick={() => handleRegister(event.id, session.id)}
-                                    disabled={registeredSessions.includes(session.id)}
-                                  >
-                                    {registeredSessions.includes(session.id)
-                                      ? "Already Registered"
-                                      : "Register for Session"}
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {calendarEvents.map((event) => (
+                      <Card
+                        key={event.id}
+                        className="hover:shadow-md transition-shadow border-l-4 border-l-purple-500"
+                      >
+                        <CardHeader>
+                          <CardTitle className={`text-lg ${montserrat.className}`}>
+                            {event.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <Badge variant="secondary" className="mb-2">
+                            {event.eventType}
+                          </Badge>
+                          <div className="flex items-center mb-2">
+                            <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                            <p className="text-sm">
+                              {format(parseISO(event.startDate), "h:mm a")} -{" "}
+                              {format(parseISO(event.endDate), "h:mm a")}
+                            </p>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
+                          <div className="flex items-center mb-4">
+                            <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                            <p className="text-sm">{event.location}</p>
+                          </div>
+                          <Sheet>
+                            <SheetTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => setSelectedEvent(event)}
+                              >
+                                View Details
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent className="w-full sm:w-[540px] lg:w-[720px] max-w-[90vw]">
+                              <SheetHeader>
+                                <SheetTitle className={`text-2xl ${montserrat.className}`}>
+                                  {selectedEvent?.title}
+                                </SheetTitle>
+                              </SheetHeader>
+                              <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
+                                <SheetDescription>
+                                  {selectedEvent && (
+                                    <>
+                                      <Badge variant="secondary" className="mb-2">
+                                        {selectedEvent.eventType}
+                                      </Badge>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        {selectedEvent.description}
+                                      </p>
+                                      <div className="flex items-center mb-2">
+                                        <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                                        <p className="text-sm">
+                                          {selectedEvent.startDate} to {selectedEvent.endDate}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center mb-4">
+                                        <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                        <p className="text-sm">{selectedEvent.location}</p>
+                                      </div>
+                                      <h4
+                                        className={`font-semibold mb-2 text-lg ${montserrat.className}`}
+                                      >
+                                        Sessions:
+                                      </h4>
+                                      {selectedEvent.sessions.map((session) => (
+                                        <div
+                                          key={session.id}
+                                          className="mb-4 p-4 bg-gray-50 rounded-md"
+                                        >
+                                          <h5 className={`font-medium ${montserrat.className}`}>
+                                            {session.title}
+                                          </h5>
+                                          <p className="text-sm text-gray-600 mb-2">
+                                            {session.description}
+                                          </p>
+                                          <div className="flex items-center mb-2">
+                                            <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                                            <p className="text-sm">
+                                              {format(parseISO(session.startTime), "h:mm a")} -{" "}
+                                              {format(parseISO(session.endTime), "h:mm a")}
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center mb-2">
+                                            <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                            <p className="text-sm">{session.location}</p>
+                                          </div>
+                                          {currentUser?.role === "student" && (
+                                            <Button
+                                              className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white"
+                                              onClick={() =>
+                                                handleRegister(selectedEvent.id, session.id)
+                                              }
+                                              disabled={registeredSessions.includes(session.id)}
+                                            >
+                                              {registeredSessions.includes(session.id)
+                                                ? "Already Registered"
+                                                : "Register for Session"}
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </>
+                                  )}
+                                </SheetDescription>
+                              </ScrollArea>
+                            </SheetContent>
+                          </Sheet>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-center text-gray-500">No events on this date.</p>
                 )}

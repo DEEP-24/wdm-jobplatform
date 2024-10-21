@@ -136,7 +136,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
               </svg>
               <span className="font-extrabold tracking-tight">GrowthLink</span>
             </Link>
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden lg:flex items-center space-x-1">
               {navItems
                 .filter((item) => item.roles.includes(userRole))
                 .map((item) => (
@@ -158,7 +158,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
               {userRole === "student" && !isMentor && (
                 <Button
                   asChild
-                  className={`bg-purple-500 text-white hover:bg-purple-400 transition-colors duration-150 font-semibold shadow-md hidden md:flex ${poppins.className}`}
+                  className={`bg-purple-500 text-white hover:bg-purple-400 transition-colors duration-150 font-semibold shadow-md hidden lg:flex ${poppins.className}`}
                 >
                   <Link href="/become-a-mentor">Become a Mentor</Link>
                 </Button>
@@ -199,7 +199,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-white hover:bg-purple-600 transition-colors duration-150"
+                className="lg:hidden text-white hover:bg-purple-600 transition-colors duration-150"
                 onClick={toggleMobileMenu}
               >
                 {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -213,7 +213,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
       <div
         className={`fixed inset-0 z-50 bg-purple-700 text-white transform ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 ease-in-out md:hidden`}
+        } transition-transform duration-300 ease-in-out lg:hidden`}
       >
         <div className="flex flex-col h-full">
           <div className="flex justify-between items-center p-4 border-b border-purple-600">
@@ -261,6 +261,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
                   {item.name}
                 </Link>
               ))}
+
             {userRole === "student" && !isMentor && (
               <Link
                 href="/become-a-mentor"
