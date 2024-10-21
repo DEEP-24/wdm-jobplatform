@@ -16,9 +16,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Job } from "@/app/types/job";
 
 type JobType = "job" | "internship";
+type WorkMode = "onsite" | "remote" | "hybrid";
+
+type Job = {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  fullDescription: string;
+  salary: string;
+  workMode: WorkMode;
+  type: JobType;
+  postedAgo: string;
+};
 
 export default function AddJobPage() {
   const router = useRouter();
