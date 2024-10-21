@@ -91,18 +91,20 @@ export default function AddEventPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Add New Academic Event</CardTitle>
+          <CardTitle className="text-2xl sm:text-3xl font-bold">Add New Academic Event</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="title">Event Title</Label>
                 <Input id="title" {...register("title", { required: "Title is required" })} />
-                {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="description">Event Description</Label>
@@ -111,10 +113,10 @@ export default function AddEventPage() {
                   {...register("description", { required: "Description is required" })}
                 />
                 {errors.description && (
-                  <p className="text-red-500 text-sm">{errors.description.message}</p>
+                  <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="eventType">Event Type</Label>
                   <Controller
@@ -137,7 +139,7 @@ export default function AddEventPage() {
                     )}
                   />
                   {errors.eventType && (
-                    <p className="text-red-500 text-sm">{errors.eventType.message}</p>
+                    <p className="text-red-500 text-sm mt-1">{errors.eventType.message}</p>
                   )}
                 </div>
                 <div>
@@ -147,7 +149,7 @@ export default function AddEventPage() {
                     {...register("location", { required: "Location is required" })}
                   />
                   {errors.location && (
-                    <p className="text-red-500 text-sm">{errors.location.message}</p>
+                    <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>
                   )}
                 </div>
                 <div>
@@ -157,6 +159,9 @@ export default function AddEventPage() {
                     id="startDate"
                     {...register("startDate", { required: "Start date is required" })}
                   />
+                  {errors.startDate && (
+                    <p className="text-red-500 text-sm mt-1">{errors.startDate.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="endDate">End Date</Label>
@@ -165,6 +170,9 @@ export default function AddEventPage() {
                     id="endDate"
                     {...register("endDate", { required: "End date is required" })}
                   />
+                  {errors.endDate && (
+                    <p className="text-red-500 text-sm mt-1">{errors.endDate.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="maxAttendees">Max Attendees</Label>
@@ -173,6 +181,9 @@ export default function AddEventPage() {
                     id="maxAttendees"
                     {...register("maxAttendees", { required: "Max attendees is required", min: 1 })}
                   />
+                  {errors.maxAttendees && (
+                    <p className="text-red-500 text-sm mt-1">{errors.maxAttendees.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="registrationDeadline">Registration Deadline</Label>
@@ -183,6 +194,11 @@ export default function AddEventPage() {
                       required: "Registration deadline is required",
                     })}
                   />
+                  {errors.registrationDeadline && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.registrationDeadline.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -200,6 +216,11 @@ export default function AddEventPage() {
                             required: "Session title is required",
                           })}
                         />
+                        {errors.sessions?.[index]?.title && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.sessions[index]?.title?.message}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor={`sessions.${index}.description`}>Session Description</Label>
@@ -208,8 +229,13 @@ export default function AddEventPage() {
                             required: "Session description is required",
                           })}
                         />
+                        {errors.sessions?.[index]?.description && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.sessions[index]?.description?.message}
+                          </p>
+                        )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor={`sessions.${index}.startTime`}>Start Time</Label>
                           <Input
@@ -218,6 +244,11 @@ export default function AddEventPage() {
                               required: "Start time is required",
                             })}
                           />
+                          {errors.sessions?.[index]?.startTime && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.sessions[index]?.startTime?.message}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor={`sessions.${index}.endTime`}>End Time</Label>
@@ -227,6 +258,11 @@ export default function AddEventPage() {
                               required: "End time is required",
                             })}
                           />
+                          {errors.sessions?.[index]?.endTime && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.sessions[index]?.endTime?.message}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor={`sessions.${index}.location`}>Location</Label>
@@ -235,6 +271,11 @@ export default function AddEventPage() {
                               required: "Session location is required",
                             })}
                           />
+                          {errors.sessions?.[index]?.location && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.sessions[index]?.location?.message}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor={`sessions.${index}.maxAttendees`}>Max Attendees</Label>
@@ -245,6 +286,11 @@ export default function AddEventPage() {
                               min: 1,
                             })}
                           />
+                          {errors.sessions?.[index]?.maxAttendees && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.sessions[index]?.maxAttendees?.message}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -279,7 +325,7 @@ export default function AddEventPage() {
               </Button>
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full bg-purple-500 hover:bg-purple-600 text-white">
               Add Event
             </Button>
           </form>

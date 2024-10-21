@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
@@ -19,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import type { Job } from "@/app/types/job";
 
-// Update the Job type to include type
 type JobType = "job" | "internship";
 
 export default function AddJobPage() {
@@ -57,23 +55,27 @@ export default function AddJobPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Add New Job</CardTitle>
+          <CardTitle className="text-2xl sm:text-3xl font-bold">Add New Job</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="title">Job Title</Label>
                 <Input id="title" {...register("title", { required: "Title is required" })} />
-                {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="company">Company</Label>
                 <Input id="company" {...register("company", { required: "Company is required" })} />
-                {errors.company && <p className="text-red-500 text-sm">{errors.company.message}</p>}
+                {errors.company && (
+                  <p className="text-red-500 text-sm mt-1">{errors.company.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="description">Short Description</Label>
@@ -82,7 +84,7 @@ export default function AddJobPage() {
                   {...register("description", { required: "Description is required" })}
                 />
                 {errors.description && (
-                  <p className="text-red-500 text-sm">{errors.description.message}</p>
+                  <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
                 )}
               </div>
               <div>
@@ -92,24 +94,26 @@ export default function AddJobPage() {
                   {...register("fullDescription", { required: "Full description is required" })}
                 />
                 {errors.fullDescription && (
-                  <p className="text-red-500 text-sm">{errors.fullDescription.message}</p>
+                  <p className="text-red-500 text-sm mt-1">{errors.fullDescription.message}</p>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="salary">Salary</Label>
                   <Input id="salary" {...register("salary", { required: "Salary is required" })} />
-                  {errors.salary && <p className="text-red-500 text-sm">{errors.salary.message}</p>}
+                  {errors.salary && (
+                    <p className="text-red-500 text-sm mt-1">{errors.salary.message}</p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="jobType">Job Type</Label>
+                  <Label htmlFor="jobType">Work Mode</Label>
                   <Select
                     onValueChange={(value) =>
                       setValue("workMode", value as "onsite" | "remote" | "hybrid")
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select job type" />
+                      <SelectValue placeholder="Select work mode" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="onsite">Onsite</SelectItem>
@@ -118,7 +122,7 @@ export default function AddJobPage() {
                     </SelectContent>
                   </Select>
                   {errors.workMode && (
-                    <p className="text-red-500 text-sm">{errors.workMode.message}</p>
+                    <p className="text-red-500 text-sm mt-1">{errors.workMode.message}</p>
                   )}
                 </div>
               </div>
@@ -133,7 +137,7 @@ export default function AddJobPage() {
                     <SelectItem value="internship">Internship</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
+                {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type.message}</p>}
               </div>
             </div>
             <Button type="submit" className="w-full">

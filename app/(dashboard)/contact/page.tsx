@@ -64,14 +64,16 @@ export default function ContactPage() {
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Contact Us</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-purple-800">
+        Contact Us
+      </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Send us a message</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="bg-purple-700 text-white rounded-t-lg">
+            <CardTitle className="text-xl sm:text-2xl">Send us a message</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -79,11 +81,15 @@ export default function ContactPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel className="text-gray-700">Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your name" {...field} />
+                        <Input
+                          placeholder="Your name"
+                          {...field}
+                          className="bg-gray-50 border-gray-300"
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
@@ -92,11 +98,15 @@ export default function ContactPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-gray-700">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your email" {...field} />
+                        <Input
+                          placeholder="Your email"
+                          {...field}
+                          className="bg-gray-50 border-gray-300"
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
@@ -105,11 +115,15 @@ export default function ContactPage() {
                   name="subject"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Subject</FormLabel>
+                      <FormLabel className="text-gray-700">Subject</FormLabel>
                       <FormControl>
-                        <Input placeholder="Message subject" {...field} />
+                        <Input
+                          placeholder="Message subject"
+                          {...field}
+                          className="bg-gray-50 border-gray-300"
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
@@ -118,15 +132,23 @@ export default function ContactPage() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Message</FormLabel>
+                      <FormLabel className="text-gray-700">Message</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Your message" className="resize-none" {...field} />
+                        <Textarea
+                          placeholder="Your message"
+                          className="resize-none bg-gray-50 border-gray-300"
+                          {...field}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-colors duration-200"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
@@ -135,34 +157,32 @@ export default function ContactPage() {
         </Card>
 
         <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="bg-purple-700 text-white rounded-t-lg">
+              <CardTitle className="text-xl sm:text-2xl">Contact Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-6 space-y-4">
               <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <span>contact@example.com</span>
+                <Mail className="h-5 w-5 text-purple-600" />
+                <span className="text-gray-700">contact@example.com</span>
               </div>
               <div className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <span>+1 (555) 123-4567</span>
+                <Phone className="h-5 w-5 text-purple-600" />
+                <span className="text-gray-700">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <span>123 Conference St, Tech City, TC 12345</span>
+                <MapPin className="h-5 w-5 text-purple-600" />
+                <span className="text-gray-700">123 Conference St, Tech City, TC 12345</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Location</CardTitle>
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="bg-purple-700 text-white rounded-t-lg">
+              <CardTitle className="text-xl sm:text-2xl">Location</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="aspect-video w-full">
-                {/* biome-ignore lint/style/useSelfClosingElements: <explanation> */}
-                {/* biome-ignore lint/a11y/useIframeTitle: <explanation> */}
                 <iframe
                   width="100%"
                   height="100%"
@@ -172,7 +192,8 @@ export default function ContactPage() {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+                  title="Google Maps Location"
+                />
               </div>
             </CardContent>
           </Card>

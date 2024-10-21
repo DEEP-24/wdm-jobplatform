@@ -111,15 +111,17 @@ export default function BecomeAMentorPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Become a Mentor</CardTitle>
+    <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <Card className="bg-white shadow-lg">
+        <CardHeader className="bg-purple-700 text-white rounded-t-lg">
+          <CardTitle className="text-2xl sm:text-3xl font-bold">Become a Mentor</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+        <CardContent className="pt-6">
+          <form onSubmit={onSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name" className="text-gray-700">
+                Full Name
+              </Label>
               <Input
                 id="name"
                 name="name"
@@ -127,33 +129,42 @@ export default function BecomeAMentorPage() {
                 onChange={handleInputChange}
                 required
                 disabled
+                className="mt-1 bg-gray-100"
               />
             </div>
 
             <div>
-              <Label htmlFor="title">Professional Title</Label>
+              <Label htmlFor="title" className="text-gray-700">
+                Professional Title
+              </Label>
               <Input
                 id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
                 required
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="company">Company</Label>
+              <Label htmlFor="company" className="text-gray-700">
+                Company
+              </Label>
               <Input
                 id="company"
                 name="company"
                 value={formData.company}
                 onChange={handleInputChange}
                 required
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="expertise">Areas of Expertise (comma-separated)</Label>
+              <Label htmlFor="expertise" className="text-gray-700">
+                Areas of Expertise (comma-separated)
+              </Label>
               <Input
                 id="expertise"
                 name="expertise"
@@ -161,11 +172,14 @@ export default function BecomeAMentorPage() {
                 onChange={handleInputChange}
                 placeholder="React, Node.js, Cloud Architecture"
                 required
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio" className="text-gray-700">
+                Bio
+              </Label>
               <Textarea
                 id="bio"
                 name="bio"
@@ -174,11 +188,14 @@ export default function BecomeAMentorPage() {
                 placeholder="Tell us about your experience and what you can offer as a mentor"
                 rows={4}
                 required
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="imageUrl">Profile Image URL</Label>
+              <Label htmlFor="imageUrl" className="text-gray-700">
+                Profile Image URL
+              </Label>
               <Input
                 id="imageUrl"
                 name="imageUrl"
@@ -186,10 +203,15 @@ export default function BecomeAMentorPage() {
                 onChange={handleInputChange}
                 placeholder="https://example.com/your-image.jpg"
                 required
+                className="mt-1"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-colors duration-200"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>

@@ -265,7 +265,7 @@ export default function AcademicEventsPage() {
 
   return (
     <div className={`w-full ${openSans.className}`}>
-      <div className="bg-purple-700 text-white p-6 mb-6">
+      <div className="bg-purple-500 text-white p-6 mb-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-4">
           <h2 className={`text-3xl font-bold ${montserrat.className}`}>Upcoming Academic Events</h2>
           <div className="flex items-center space-x-4 flex-wrap gap-4">

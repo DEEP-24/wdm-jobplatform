@@ -30,12 +30,18 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  weight: ["400", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 interface Mentor {
   id: string;
@@ -130,12 +136,12 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
       description: "Your mentorship application has been successfully submitted.",
     });
     form.reset();
-    onClose(); // Close the dialog
+    onClose();
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -143,7 +149,7 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Your name" {...field} />
+                <Input placeholder="Your name" {...field} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,7 +162,7 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Your email" {...field} />
+                <Input placeholder="Your email" {...field} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -170,7 +176,7 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
               <FormLabel>Preferred Mentor</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select a mentor" />
                   </SelectTrigger>
                 </FormControl>
@@ -195,7 +201,7 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
               <FormControl>
                 <Textarea
                   placeholder="Tell us why you're interested in the mentorship program"
-                  className="resize-none"
+                  className="resize-none bg-white"
                   {...field}
                 />
               </FormControl>
@@ -203,7 +209,9 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
             </FormItem>
           )}
         />
-        <Button type="submit">Submit Application</Button>
+        <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+          Submit Application
+        </Button>
       </form>
     </Form>
   );
@@ -226,7 +234,6 @@ export default function MentorsPage() {
   }, []);
 
   useEffect(() => {
-    // This will hide any floating buttons or arrows
     const style = document.createElement("style");
     style.textContent = `
       .floating-button, .scroll-arrow, [class*="scroll-arrow"] {
@@ -241,102 +248,126 @@ export default function MentorsPage() {
   }, []);
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <h1 className="text-3xl font-bold mb-6">Mentorship Program</h1>
+    <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-purple-800 text-center">
+          Mentorship Program
+        </h1>
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>About Our Mentorship Program</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4">
-            Our mentorship program connects students with experienced professionals in their field
-            of interest. Mentors provide guidance, share industry insights, and help students
-            navigate their career paths.
-          </p>
-          <h3 className="text-lg font-semibold mb-2">Benefits of joining:</h3>
-          <ul className="list-disc list-inside mb-4">
-            <li>One-on-one guidance from industry experts</li>
-            <li>Networking opportunities</li>
-            <li>Career advice and skill development</li>
-            <li>Exposure to real-world projects and challenges</li>
-          </ul>
-          <h3 className="text-lg font-semibold mb-2">Application Process:</h3>
-          <ol className="list-decimal list-inside mb-4">
-            <li>Submit your application</li>
-            <li>Interview with potential mentors</li>
-            <li>Get matched with a mentor</li>
-            <li>Start your mentorship journey</li>
-          </ol>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setDialogOpen(true)}>Apply for Mentorship</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Apply for Mentorship</DialogTitle>
-              </DialogHeader>
-              <ApplicationForm mentors={mentors} onClose={() => setDialogOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
+        <Card className="bg-white shadow-lg">
+          <CardHeader className="bg-purple-700 text-white rounded-t-lg">
+            <CardTitle className="text-2xl">About Our Mentorship Program</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <p className="text-gray-700">
+              Our mentorship program connects students with experienced professionals in their field
+              of interest. Mentors provide guidance, share industry insights, and help students
+              navigate their career paths.
+            </p>
+            <div>
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">Benefits of joining:</h3>
+              <ul className="list-disc list-inside text-gray-700 space-y-1">
+                <li>One-on-one guidance from industry experts</li>
+                <li>Networking opportunities</li>
+                <li>Career advice and skill development</li>
+                <li>Exposure to real-world projects and challenges</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">Application Process:</h3>
+              <ol className="list-decimal list-inside text-gray-700 space-y-1">
+                <li>Submit your application</li>
+                <li>Interview with potential mentors</li>
+                <li>Get matched with a mentor</li>
+                <li>Start your mentorship journey</li>
+              </ol>
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white mt-4"
+                >
+                  Apply for Mentorship
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-purple-800">Apply for Mentorship</DialogTitle>
+                </DialogHeader>
+                <ApplicationForm mentors={mentors} onClose={() => setDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold">Available Mentors</h2>
-        {!isMentor && (
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/become-a-mentor">Become a Mentor</Link>
-          </Button>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-purple-800">Available Mentors</h2>
+          {!isMentor && (
+            <Button
+              asChild
+              className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Link href="/become-a-mentor">Become a Mentor</Link>
+            </Button>
+          )}
+        </div>
+
+        {mentors.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mentors.map((mentor) => (
+              <Card
+                key={mentor.id}
+                className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300"
+              >
+                <CardHeader className="flex flex-col sm:flex-row items-center gap-4 pb-2">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={mentor.imageUrl} alt={mentor.name} />
+                    <AvatarFallback className="bg-purple-200 text-purple-800 text-xl font-bold">
+                      {mentor.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center sm:text-left">
+                    <CardTitle className="text-xl text-purple-800">{mentor.name}</CardTitle>
+                    <p className="text-sm text-gray-600">
+                      {mentor.title} at {mentor.company}
+                    </p>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-700">{mentor.bio}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mentor.expertise.map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="bg-purple-100 text-purple-800"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="bg-white shadow-lg text-center py-10">
+            <CardContent className="space-y-4">
+              <p className="text-xl font-semibold text-purple-800">
+                No mentors available right now
+              </p>
+              <p className="text-gray-600">Be the first to become a mentor!</p>
+              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Link href="/become-a-mentor">Become a Mentor</Link>
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
-
-      {mentors.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {mentors.map((mentor) => (
-            <Card key={mentor.id} className="flex flex-col">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={mentor.imageUrl} alt={mentor.name} />
-                  <AvatarFallback>
-                    {mentor.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-lg sm:text-xl">{mentor.name}</CardTitle>
-                  <p className="text-sm text-gray-500">
-                    {mentor.title} at {mentor.company}
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm mb-4">{mentor.bio}</p>
-                <div className="flex flex-wrap gap-2">
-                  {mentor.expertise.map((skill) => (
-                    <Badge key={skill} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-              {/* <CardContent className="pt-0">
-                <Button className="w-full">Request Mentorship</Button>
-              </CardContent> */}
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <p className="text-xl font-semibold mb-4">No mentors available right now</p>
-          <p className="text-gray-600 mb-6">Be the first to become a mentor!</p>
-          <Button asChild>
-            <Link href="/become-a-mentor">Become a Mentor</Link>
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
