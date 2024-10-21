@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { CalendarIcon, UserCircle } from "lucide-react";
+import { CalendarIcon, UserCircle, Mail, Phone, MapPin } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Poppins } from "next/font/google";
@@ -33,6 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { USA_STATES } from "@/app/constants/usa-states";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -41,7 +42,7 @@ const poppins = Poppins({
 });
 
 export default function ProfilePage() {
-  const form = useForm<User & { notificationPreferences: string[] }>({
+  const form = useForm<User & { notificationPreferences: string[]; notificationMessage: string }>({
     defaultValues: {
       id: "",
       email: "",
@@ -55,22 +56,27 @@ export default function ProfilePage() {
       state: "",
       zipcode: "",
       notificationPreferences: [],
+      notificationMessage: "",
     },
   });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
-      const user: User & { notificationPreferences?: string[] } = JSON.parse(storedUser);
+      const user: User & { notificationPreferences?: string[]; notificationMessage?: string } =
+        JSON.parse(storedUser);
       console.log("Loaded user data:", user);
       form.reset({
         ...user,
         notificationPreferences: user.notificationPreferences || [],
+        notificationMessage: user.notificationMessage || "",
       });
     }
   }, [form]);
 
-  function onSubmit(values: User & { notificationPreferences: string[] }) {
+  function onSubmit(
+    values: User & { notificationPreferences: string[]; notificationMessage: string },
+  ) {
     const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
     const userIndex = users.findIndex((user) => user.id === values.id);
 
@@ -97,24 +103,24 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-purple-100 to-white ${poppins.className}`}>
       <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8">
-        <Card className="max-w-4xl mx-auto bg-white shadow-lg">
-          <CardHeader className="text-center bg-purple-700 text-white rounded-t-lg">
-            <div className="mx-auto mb-4">
-              <Avatar className="w-24 h-24 border-4 border-white">
-                <AvatarImage src="/placeholder.svg?height=96&width=96" alt="Profile picture" />
+        <Card className="max-w-4xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden">
+          <CardHeader className="text-center bg-purple-700 text-white p-8">
+            <div className="mx-auto mb-6">
+              <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                <AvatarImage src="/placeholder.svg?height=128&width=128" alt="Profile picture" />
                 <AvatarFallback>
-                  <UserCircle className="w-24 h-24" />
+                  <UserCircle className="w-32 h-32" />
                 </AvatarFallback>
               </Avatar>
             </div>
-            <CardTitle className="text-3xl font-bold">Your Profile</CardTitle>
-            <CardDescription className="text-purple-100">
-              Update your profile details and preferences.
+            <CardTitle className="text-4xl font-bold mb-2">Your Profile</CardTitle>
+            <CardDescription className="text-purple-100 text-lg">
+              Update your profile details and preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="space-y-6">
@@ -124,9 +130,15 @@ export default function ProfilePage() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-purple-800">First Name</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">
+                            First Name
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} className="bg-gray-50" />
+                            <Input
+                              placeholder="John"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -136,9 +148,13 @@ export default function ProfilePage() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-purple-800">Last Name</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">Last Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} className="bg-gray-50" />
+                            <Input
+                              placeholder="Doe"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -149,13 +165,19 @@ export default function ProfilePage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-purple-800">Email</FormLabel>
+                        <FormLabel className="text-purple-800 font-semibold">Email</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="johndoe@example.com"
-                            {...field}
-                            className="bg-gray-50"
-                          />
+                          <div className="relative">
+                            <Input
+                              placeholder="johndoe@example.com"
+                              {...field}
+                              className="bg-gray-50 border-purple-200 pl-10"
+                            />
+                            <Mail
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500"
+                              size={18}
+                            />
+                          </div>
                         </FormControl>
                       </FormItem>
                     )}
@@ -165,13 +187,13 @@ export default function ProfilePage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-purple-800">Password</FormLabel>
+                        <FormLabel className="text-purple-800 font-semibold">Password</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
                             placeholder="********"
                             {...field}
-                            className="bg-gray-50"
+                            className="bg-gray-50 border-purple-200"
                           />
                         </FormControl>
                         <FormDescription>Leave blank to keep current password</FormDescription>
@@ -184,13 +206,15 @@ export default function ProfilePage() {
                       name="dob"
                       render={({ field }) => (
                         <FormItem className="flex flex-col w-full">
-                          <FormLabel className="text-purple-800">Date of Birth</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">
+                            Date of Birth
+                          </FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
                                   variant={"outline"}
-                                  className={`w-full pl-3 text-left font-normal bg-gray-50 ${
+                                  className={`w-full pl-3 text-left font-normal bg-gray-50 border-purple-200 ${
                                     !field.value && "text-muted-foreground"
                                   }`}
                                 >
@@ -222,26 +246,50 @@ export default function ProfilePage() {
                       name="phoneNo"
                       render={({ field }) => (
                         <FormItem className="flex flex-col w-full">
-                          <FormLabel className="text-purple-800">Phone Number</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">
+                            Phone Number
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="1234567890" {...field} className="bg-gray-50" />
+                            <div className="relative">
+                              <Input
+                                placeholder="1234567890"
+                                {...field}
+                                className="bg-gray-50 border-purple-200 pl-10"
+                              />
+                              <Phone
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500"
+                                size={18}
+                              />
+                            </div>
                           </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
                 </div>
-                <Separator className="my-8" />
+                <Separator className="my-8 bg-purple-200" />
                 <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-purple-800">Address Information</h3>
+                  <h3 className="text-2xl font-semibold text-purple-800">Address Information</h3>
                   <FormField
                     control={form.control}
                     name="street"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-purple-800">Street Address</FormLabel>
+                        <FormLabel className="text-purple-800 font-semibold">
+                          Street Address
+                        </FormLabel>
                         <FormControl>
-                          <Input placeholder="123 Main St" {...field} className="bg-gray-50" />
+                          <div className="relative">
+                            <Input
+                              placeholder="123 Main St"
+                              {...field}
+                              className="bg-gray-50 border-purple-200 pl-10"
+                            />
+                            <MapPin
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500"
+                              size={18}
+                            />
+                          </div>
                         </FormControl>
                       </FormItem>
                     )}
@@ -252,9 +300,13 @@ export default function ProfilePage() {
                       name="city"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-purple-800">City</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">City</FormLabel>
                           <FormControl>
-                            <Input placeholder="Anytown" {...field} className="bg-gray-50" />
+                            <Input
+                              placeholder="Anytown"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -264,10 +316,10 @@ export default function ProfilePage() {
                       name="state"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-purple-800">State</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">State</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="bg-gray-50">
+                              <SelectTrigger className="bg-gray-50 border-purple-200">
                                 <SelectValue placeholder="Select a state" />
                               </SelectTrigger>
                             </FormControl>
@@ -287,46 +339,76 @@ export default function ProfilePage() {
                       name="zipcode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-purple-800">Zip Code</FormLabel>
+                          <FormLabel className="text-purple-800 font-semibold">Zip Code</FormLabel>
                           <FormControl>
-                            <Input placeholder="12345" {...field} className="bg-gray-50" />
+                            <Input
+                              placeholder="12345"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
                           </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
                 </div>
-                <Separator className="my-8" />
+                <Separator className="my-8 bg-purple-200" />
                 <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-purple-800">Notification Preference</h3>
+                  <h3 className="text-2xl font-semibold text-purple-800">
+                    Notification Preferences
+                  </h3>
                   <FormField
                     control={form.control}
                     name="notificationPreferences"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-gray-50">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value.includes("email")}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                field.onChange(["email"]);
-                              } else {
-                                field.onChange([]);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="text-purple-800">Email Notifications</FormLabel>
-                          <FormDescription>Receive notifications via email.</FormDescription>
+                      <FormItem className="space-y-4">
+                        <FormLabel className="text-purple-800 font-semibold">
+                          Choose your notification methods:
+                        </FormLabel>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field.value.includes("email")}
+                              onCheckedChange={(checked) => {
+                                const updatedValue = checked
+                                  ? [...field.value, "email"]
+                                  : field.value.filter((v) => v !== "email");
+                                field.onChange(updatedValue);
+                              }}
+                            />
+                            <label
+                              htmlFor="email"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Email
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field.value.includes("sms")}
+                              onCheckedChange={(checked) => {
+                                const updatedValue = checked
+                                  ? [...field.value, "sms"]
+                                  : field.value.filter((v) => v !== "sms");
+                                field.onChange(updatedValue);
+                              }}
+                            />
+                            <label
+                              htmlFor="sms"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Text Message (SMS)
+                            </label>
+                          </div>
                         </div>
+                        <FormDescription>Select one or more notification methods.</FormDescription>
                       </FormItem>
                     )}
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white text-lg py-3 rounded-lg transition-colors duration-300"
                 >
                   Update Profile
                 </Button>
