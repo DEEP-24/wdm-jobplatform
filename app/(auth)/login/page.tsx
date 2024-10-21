@@ -118,109 +118,107 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="bg-white shadow-lg border border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-gray-900">
-            Sign in to your account
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email address
-              </Label>
-              <div className="relative">
-                <MailIcon
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
-              </Label>
-              <div className="relative">
-                <LockIcon
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="pl-10 bg-gray-50 border-gray-300 text-gray-900 focus:ring-gray-500 focus:border-gray-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
-              Sign in
-            </Button>
-          </form>
-          <div className="mt-4 text-sm text-gray-600 flex flex-col items-center justify-center">
-            <p className="font-semibold">Testing credentials:</p>
-            <div className="flex flex-col items-center gap-2 justify-center">
-              <div className="flex items-center gap-2 justify-center">
-                <p className="font-semibold">Role: Admin</p>
-                <p>admin@app.com</p>
-                <p>password</p>
-              </div>
-              <div className="flex items-center gap-2 justify-center">
-                <p className="font-semibold">Role: Employer</p>
-                <p>employer@app.com</p>
-                <p>password</p>
-              </div>
-              <div className="flex items-center gap-2 justify-center">
-                <p className="font-semibold">Role: Organizer</p>
-                <p>organizer@app.com</p>
-                <p>password</p>
-              </div>
-              <div className="flex items-center gap-2 justify-center">
-                <p className="font-semibold">Role: Mentor</p>
-                <p>mentor@app.com</p>
-                <p>password</p>
-              </div>
-              <div className="flex items-center gap-2 justify-center">
-                <p className="font-semibold">Role: Student</p>
-                <p>student@app.com</p>
-                <p>password</p>
-              </div>
+    <Card className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm shadow-lg border border-purple-200">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-center text-gray-900">
+          Sign in to your account
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              Email address
+            </Label>
+            <div className="relative">
+              <MailIcon
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or</span>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              Password
+            </Label>
+            <div className="relative">
+              <LockIcon
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
           </div>
-          <Link
-            href="/register"
-            className="text-sm font-medium text-gray-700 hover:text-black transition-colors hover:underline"
-          >
-            Create a new account
-          </Link>
-        </CardFooter>
-      </Card>
-    </div>
+          <Button type="submit" className="w-full bg-purple-600 text-white hover:bg-purple-700">
+            Sign in
+          </Button>
+        </form>
+        <div className="mt-4 text-sm text-gray-600 flex flex-col items-center justify-center">
+          <p className="font-semibold">Testing credentials:</p>
+          <div className="flex flex-col items-center gap-2 justify-center">
+            <div className="flex items-center gap-2 justify-center">
+              <p className="font-semibold">Role: Admin</p>
+              <p>admin@app.com</p>
+              <p>password</p>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="font-semibold">Role: Employer</p>
+              <p>employer@app.com</p>
+              <p>password</p>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="font-semibold">Role: Organizer</p>
+              <p>organizer@app.com</p>
+              <p>password</p>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="font-semibold">Role: Mentor</p>
+              <p>mentor@app.com</p>
+              <p>password</p>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="font-semibold">Role: Student</p>
+              <p>student@app.com</p>
+              <p>password</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col space-y-4">
+        <div className="relative w-full">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or</span>
+          </div>
+        </div>
+        <Link
+          href="/register"
+          className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors hover:underline"
+        >
+          Create a new account
+        </Link>
+      </CardFooter>
+    </Card>
   );
 }

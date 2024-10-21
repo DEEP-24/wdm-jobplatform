@@ -27,6 +27,17 @@ import {
   MessageCircleIcon,
 } from "lucide-react";
 import ChatComponent from "@/app/(dashboard)/_components/chat";
+import { Montserrat, Open_Sans } from "next/font/google";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const attendeeData = [
   { month: "Jan", attendees: 400 },
@@ -70,7 +81,7 @@ const newsAndAnnouncements = [
   },
 ];
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+const COLORS = ["#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE"];
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -86,21 +97,25 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Existing dashboard content */}
-      <Card className="bg-white text-black border border-gray-200">
+    <div className={`space-y-6 bg-purple-50 p-6 rounded-lg ${openSans.className}`}>
+      {/* Welcome Card */}
+      <Card className="bg-white text-purple-900 border border-purple-200">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">
+          <CardTitle className={`text-3xl font-bold ${montserrat.className}`}>
             Welcome to GrowthLink, {currentUser?.firstName} {currentUser?.lastName}!
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-lg">
+          <p className="text-lg text-purple-700">
             Explore cutting-edge technologies, network with industry leaders, and boost your career
             through our workshops, seminars, and various academic events.
           </p>
           <div className="mt-4 flex space-x-4">
-            <Button asChild variant="outline" className="bg-black text-white">
+            <Button
+              asChild
+              variant="outline"
+              className={`bg-purple-600 text-white hover:bg-purple-700 ${montserrat.className}`}
+            >
               <Link href="/">View Academic Events</Link>
             </Button>
           </div>
@@ -108,9 +123,9 @@ export default function HomePage() {
       </Card>
 
       {/* Call for Papers Component */}
-      <Card className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+      <Card className="bg-gradient-to-r from-purple-400 to-purple-600 text-white">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center">
+          <CardTitle className={`text-2xl font-bold flex items-center ${montserrat.className}`}>
             <FileTextIcon className="mr-2" />
             Call for Papers
           </CardTitle>
@@ -137,7 +152,7 @@ export default function HomePage() {
           <Button
             asChild
             variant="secondary"
-            className="w-full bg-white text-purple-600 hover:bg-gray-100"
+            className={`w-full bg-white text-purple-600 hover:bg-purple-100 ${montserrat.className}`}
           >
             <Link href="/">Submit Your Paper</Link>
           </Button>
@@ -145,9 +160,9 @@ export default function HomePage() {
       </Card>
 
       {/* Latest News and Announcements */}
-      <Card className="bg-white text-black border border-gray-200">
+      <Card className="bg-white text-purple-900 border border-purple-200">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center">
+          <CardTitle className={`text-2xl font-bold flex items-center ${montserrat.className}`}>
             <NewspaperIcon className="mr-2" />
             Latest News and Announcements
           </CardTitle>
@@ -155,14 +170,21 @@ export default function HomePage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {newsAndAnnouncements.map((item) => (
-              <Card key={item.id} className="bg-gray-50">
+              <Card key={item.id} className="bg-purple-50">
                 <CardHeader>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
+                  <CardTitle className={`text-lg text-purple-800 ${montserrat.className}`}>
+                    {item.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-500 mb-2">{item.date}</p>
-                  <p className="text-sm mb-4">{item.excerpt}</p>
-                  <Button asChild variant="outline" size="sm">
+                  <p className="text-sm text-purple-600 mb-2">{item.date}</p>
+                  <p className="text-sm mb-4 text-purple-700">{item.excerpt}</p>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className={`bg-purple-100 text-purple-700 hover:bg-purple-200 ${montserrat.className}`}
+                  >
                     <Link href="/">Read More</Link>
                   </Button>
                 </CardContent>
@@ -175,16 +197,18 @@ export default function HomePage() {
       {/* Quick Links Grid */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
         {/* Resources Card */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Resources</CardTitle>
+            <CardTitle className={montserrat.className}>Resources</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">Access a wealth of learning materials, tutorials, and guides.</p>
+            <p className="mb-4 text-purple-700">
+              Access a wealth of learning materials, tutorials, and guides.
+            </p>
             <Button
               asChild
               variant="outline"
-              className="w-full bg-black text-white hover:bg-gray-800 hover:text-white"
+              className={`w-full bg-purple-600 text-white hover:bg-purple-700 ${montserrat.className}`}
             >
               <Link href="/">Explore Resources</Link>
             </Button>
@@ -192,18 +216,18 @@ export default function HomePage() {
         </Card>
 
         {/* Networking Card */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Networking</CardTitle>
+            <CardTitle className={montserrat.className}>Networking</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">
+            <p className="mb-4 text-purple-700">
               Connect with peers, industry experts, and potential collaborators.
             </p>
             <Button
               asChild
               variant="outline"
-              className="w-full bg-black text-white hover:bg-gray-800 hover:text-white"
+              className={`w-full bg-purple-600 text-white hover:bg-purple-700 ${montserrat.className}`}
             >
               <Link href="/">Start Networking</Link>
             </Button>
@@ -211,16 +235,18 @@ export default function HomePage() {
         </Card>
 
         {/* Mentors Card */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Mentors</CardTitle>
+            <CardTitle className={montserrat.className}>Mentors</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">Find guidance from experienced professionals in your field.</p>
+            <p className="mb-4 text-purple-700">
+              Find guidance from experienced professionals in your field.
+            </p>
             <Button
               asChild
               variant="outline"
-              className="w-full bg-black text-white hover:bg-gray-800 hover:text-white"
+              className={`w-full bg-purple-600 text-white hover:bg-purple-700 ${montserrat.className}`}
             >
               <Link href="/">Find a Mentor</Link>
             </Button>
@@ -228,18 +254,18 @@ export default function HomePage() {
         </Card>
 
         {/* Job Opportunities Card */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Job Opportunities</CardTitle>
+            <CardTitle className={montserrat.className}>Job Opportunities</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">
+            <p className="mb-4 text-purple-700">
               Discover career opportunities from top companies in the industry.
             </p>
             <Button
               asChild
               variant="outline"
-              className="w-full bg-black text-white hover:bg-gray-800 hover:text-white"
+              className={`w-full bg-purple-600 text-white hover:bg-purple-700 ${montserrat.className}`}
             >
               <Link href="/">Browse Jobs</Link>
             </Button>
@@ -248,12 +274,12 @@ export default function HomePage() {
       </div>
 
       {/* Conference Highlights */}
-      <Card className="bg-white text-black border border-gray-200">
+      <Card className="bg-white text-purple-900 border border-purple-200">
         <CardHeader>
-          <CardTitle>Conference Highlights</CardTitle>
+          <CardTitle className={montserrat.className}>Conference Highlights</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc pl-5 space-y-2">
+          <ul className="list-disc pl-5 space-y-2 text-purple-700">
             <li>75+ sessions across 3 days</li>
             <li>120 industry-leading speakers</li>
             <li>Hands-on workshops and technical talks</li>
@@ -267,28 +293,28 @@ export default function HomePage() {
       {/* Charts */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Monthly Attendees Chart */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Monthly Attendees</CardTitle>
+            <CardTitle className={montserrat.className}>Monthly Attendees</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={attendeeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E9D5FF" />
+                <XAxis dataKey="month" stroke="#6B21A8" />
+                <YAxis stroke="#6B21A8" />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="attendees" stroke="#8884d8" />
+                <Line type="monotone" dataKey="attendees" stroke="#8B5CF6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
         {/* Event Types Distribution Chart */}
-        <Card className="bg-white text-black border border-gray-200">
+        <Card className="bg-white text-purple-900 border border-purple-200">
           <CardHeader>
-            <CardTitle>Event Types Distribution</CardTitle>
+            <CardTitle className={montserrat.className}>Event Types Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -299,7 +325,7 @@ export default function HomePage() {
                   cy="50%"
                   labelLine={false}
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill="#8B5CF6"
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
