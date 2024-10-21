@@ -16,7 +16,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Briefcase, MapPin, DollarSign, Clock, Plus, Search } from "lucide-react";
+import {
+  Building,
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Clock,
+  Plus,
+  Search,
+  CalendarIcon,
+  BuildingIcon,
+  BriefcaseIcon,
+  MapPinIcon,
+  DollarSignIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Poppins } from "next/font/google";
@@ -301,33 +314,56 @@ export default function IntegratedJobsPage() {
                 {appliedJobs.length > 0 ? (
                   <div className="space-y-6">
                     {appliedJobs.map((application) => (
-                      <Card key={application.id} className="w-full">
-                        <CardHeader>
-                          <CardTitle className="text-lg sm:text-xl font-bold">
+                      <Card
+                        key={application.id}
+                        className="w-full hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-t-lg">
+                          <CardTitle className="text-lg sm:text-xl font-bold text-purple-800">
                             {application.job?.title || "Untitled Job"}
                           </CardTitle>
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <BuildingIcon className="w-4 h-4 mr-2" />
+                            {application.job?.company || "Unknown Company"}
+                          </p>
                         </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Company</p>
-                              <p>{application.job?.company || "Unknown Company"}</p>
+                        <CardContent className="p-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="flex items-center space-x-2">
+                              <CalendarIcon className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Applied On</p>
+                                <p className="text-sm">
+                                  {new Date(application.submittedAt).toLocaleDateString()}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Applied On</p>
-                              <p>{new Date(application.submittedAt).toLocaleDateString()}</p>
+                            <div className="flex items-center space-x-2">
+                              <BriefcaseIcon className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Job Type</p>
+                                <p className="text-sm">
+                                  {application.job?.type || "Not specified"}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Job Type</p>
-                              <p>{application.job?.type || "Not specified"}</p>
+                            <div className="flex items-center space-x-2">
+                              <DollarSignIcon className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Salary</p>
+                                <p className="text-sm">
+                                  {application.job?.salary || "Not specified"}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Salary</p>
-                              <p>{application.job?.salary || "Not specified"}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Work Mode</p>
-                              <p>{application.job?.workMode || "Not specified"}</p>
+                            <div className="flex items-center space-x-2">
+                              <MapPinIcon className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Work Mode</p>
+                                <p className="text-sm">
+                                  {application.job?.workMode || "Not specified"}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
