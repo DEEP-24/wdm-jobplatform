@@ -8,21 +8,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Roboto, Poppins } from "next/font/google";
 import {
   BriefcaseIcon,
+  CalendarDaysIcon,
   CalendarIcon,
   FileTextIcon,
-  GraduationCapIcon,
   HomeIcon,
   LogOutIcon,
   Menu,
-  MessageSquareCodeIcon,
+  PlusIcon,
+  SendIcon,
   UserIcon,
   UserPenIcon,
   Users2Icon,
   X,
 } from "lucide-react";
+import { Poppins, Roboto } from "next/font/google";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -43,30 +44,53 @@ const poppins = Poppins({
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/", roles: ["admin", "student"] },
   {
-    name: "Forums",
-    icon: MessageSquareCodeIcon,
-    href: "/forums",
-    roles: ["admin", "student"],
-  },
-  {
     name: "Opportunities",
     icon: BriefcaseIcon,
     href: "/jobs",
     roles: ["admin", "employer", "student"],
   },
   {
-    name: "Events",
+    name: "Add Job",
+    icon: PlusIcon,
+    href: "/add-job",
+    roles: ["admin", "employer"],
+  },
+  {
+    name: "Networking",
+    icon: Users2Icon,
+    href: "/networking",
+    roles: ["admin", "student"],
+  },
+  {
+    name: "Reservations",
+    icon: CalendarDaysIcon,
+    href: "/reservations",
+    roles: ["admin", "student"],
+  },
+  {
+    name: "Add Event",
+    icon: PlusIcon,
+    href: "/add-event",
+    roles: ["admin", "organizer"],
+  },
+  {
+    name: "Academic Events",
     icon: CalendarIcon,
     href: "/academic-events",
     roles: ["admin", "organizer", "student"],
   },
   { name: "Mentors", icon: Users2Icon, href: "/mentors", roles: ["admin", "mentor", "student"] },
-  { name: "Resources", icon: FileTextIcon, href: "/resources", roles: ["admin", "student"] },
   {
-    name: "Career",
-    icon: GraduationCapIcon,
-    href: "/career-development",
-    roles: ["admin", "student"],
+    name: "Resources",
+    icon: FileTextIcon,
+    href: "/resources",
+    roles: ["admin", "student", "mentor"],
+  },
+  {
+    name: "Contact",
+    icon: SendIcon,
+    href: "/contact",
+    roles: ["admin", "student", "employer", "mentor"],
   },
 ];
 

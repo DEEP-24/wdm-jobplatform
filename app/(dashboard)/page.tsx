@@ -430,7 +430,7 @@ export default function HomePage() {
             variant="secondary"
             className={`w-full bg-white text-purple-600 hover:bg-purple-100 ${montserrat.className}`}
           >
-            <Link href="/submit-paper">Submit Your Paper</Link>
+            <Link href="/">Submit Your Paper</Link>
           </Button>
         </CardContent>
       </Card>
