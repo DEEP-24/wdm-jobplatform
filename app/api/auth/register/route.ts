@@ -9,7 +9,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Received registration data:", body);
 
-    // Validate request body
     const validatedData = registerSchema.parse(body);
 
     // Check if user already exists
@@ -34,10 +33,12 @@ export async function POST(request: Request) {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         role: validatedData.role,
+        street: validatedData.street,
+        city: validatedData.city,
+        state: validatedData.state,
+        zipcode: validatedData.zipcode,
       },
     });
-
-    console.log("User created successfully:", user.id);
 
     return NextResponse.json(
       { success: true, user: { id: user.id, email: user.email, role: user.role } },

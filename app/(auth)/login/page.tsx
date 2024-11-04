@@ -8,15 +8,13 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function Login() {
-  const router = useRouter();
+export default function LoginPage() {
   const [showPassword, setShowPassword] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -35,15 +33,16 @@ export default function Login() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
+        credentials: "include",
       });
 
       const data = await response.json();
 
       if (data.success) {
-        router.push("/");
+        window.location.href = "/";
       } else {
         form.setError("root", {
-          message: "Invalid email or password.",
+          message: data.error || "Invalid email or password.",
         });
       }
     } catch (_error) {

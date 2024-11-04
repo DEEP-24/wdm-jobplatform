@@ -1,6 +1,5 @@
 "use client";
 
-import type { User, UserRole } from "@/app/types/user";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { User } from "@/lib/server-auth";
+import { UserRole } from "@prisma/client";
 import {
   BriefcaseIcon,
   CalendarDaysIcon,
@@ -26,7 +27,8 @@ import {
 import { Poppins, Roboto } from "next/font/google";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import * as React from "react";
+import { Suspense } from "react";
 import { LoadingComponent } from "./_components/loading";
 
 const roboto = Roboto({
@@ -42,55 +44,55 @@ const poppins = Poppins({
 });
 
 const navItems = [
-  { name: "Home", icon: HomeIcon, href: "/", roles: ["admin", "student"] },
+  { name: "Home", icon: HomeIcon, href: "/", roles: ["ADMIN", "USER"] },
   {
     name: "Opportunities",
     icon: BriefcaseIcon,
     href: "/jobs",
-    roles: ["admin", "employer", "student"],
+    roles: ["ADMIN", "EMPLOYER", "USER"],
   },
   {
     name: "Add Job",
     icon: PlusIcon,
     href: "/add-job",
-    roles: ["admin", "employer"],
+    roles: ["ADMIN", "EMPLOYER"],
   },
   {
     name: "Networking",
     icon: Users2Icon,
     href: "/networking",
-    roles: ["admin", "student"],
+    roles: ["ADMIN", "USER"],
   },
   {
     name: "Reservations",
     icon: CalendarDaysIcon,
     href: "/reservations",
-    roles: ["admin", "student"],
+    roles: ["ADMIN", "USER"],
   },
   {
     name: "Add Event",
     icon: PlusIcon,
     href: "/add-event",
-    roles: ["admin", "organizer"],
+    roles: ["ADMIN", "ORGANIZER"],
   },
   {
     name: "Academic Events",
     icon: CalendarIcon,
     href: "/academic-events",
-    roles: ["admin", "organizer", "student"],
+    roles: ["ADMIN", "ORGANIZER", "USER"],
   },
-  { name: "Mentors", icon: Users2Icon, href: "/mentors", roles: ["admin", "mentor", "student"] },
+  { name: "Mentors", icon: Users2Icon, href: "/mentors", roles: ["ADMIN", "MENTOR", "USER"] },
   {
     name: "Resources",
     icon: FileTextIcon,
     href: "/resources",
-    roles: ["admin", "student", "mentor"],
+    roles: ["ADMIN", "USER", "MENTOR"],
   },
   {
     name: "Contact",
     icon: SendIcon,
     href: "/contact",
-    roles: ["admin", "student", "employer", "mentor"],
+    roles: ["ADMIN", "USER", "EMPLOYER", "MENTOR"],
   },
 ];
 
@@ -101,23 +103,36 @@ interface ModernLayoutProps {
 export default function ModernLayout({ children }: ModernLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isMentor, setIsMentor] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>("student");
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [isMentor, setIsMentor] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (!storedUser) {
-      router.push("/login");
-    } else {
-      const user: User = JSON.parse(storedUser);
-      setUserRole(user.role);
-      const mentors = JSON.parse(localStorage.getItem("mentors") || "[]");
-      setIsMentor(mentors.some((mentor: any) => mentor.id === user.id));
-    }
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/check", {
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+          // Check mentor status if needed
+          const mentors = JSON.parse(localStorage.getItem("mentors") || "[]");
+          setIsMentor(mentors.some((mentor: any) => mentor.id === data.user.id));
+        } else {
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        router.replace("/login");
+      }
+    };
+
+    fetchUser();
   }, [router]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -129,18 +144,37 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
     };
   }, [mobileMenuOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        // Clear any local storage items
+        localStorage.removeItem("mentors");
+        localStorage.removeItem("currentUser");
+
+        // Force a hard refresh and redirect
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  if (!user) {
+    return <LoadingComponent />;
+  }
+
   return (
     <div className={`flex flex-col min-h-screen bg-gray-50 ${roboto.className}`}>
-      {/* Sticky Top Navbar */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-purple-700 text-white shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-4">
@@ -161,25 +195,26 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
               <span className="font-extrabold tracking-tight">GrowthLink</span>
             </Link>
             <nav className="hidden lg:flex items-center space-x-1">
-              {navItems
-                .filter((item) => item.roles.includes(userRole))
-                .map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
-                      pathname === item.href
-                        ? "bg-purple-800 text-white"
-                        : "text-purple-100 hover:bg-purple-600"
-                    }`}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.name}
-                  </Link>
-                ))}
+              {user &&
+                navItems
+                  .filter((item) => item.roles.includes(user.role))
+                  .map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
+                        pathname === item.href
+                          ? "bg-purple-800 text-white"
+                          : "text-purple-100 hover:bg-purple-600"
+                      }`}
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.name}
+                    </Link>
+                  ))}
             </nav>
             <div className="flex items-center space-x-2">
-              {userRole === "student" && !isMentor && (
+              {user.role === UserRole.USER && !isMentor && (
                 <Button
                   asChild
                   className={`bg-purple-500 text-white hover:bg-purple-400 transition-colors duration-150 font-semibold shadow-md hidden lg:flex ${poppins.className}`}
@@ -268,25 +303,26 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
             </Button>
           </div>
           <nav className="flex-grow px-4 py-6 overflow-y-auto">
-            {navItems
-              .filter((item) => item.roles.includes(userRole))
-              .map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md text-lg font-medium transition-colors duration-150 ${
-                    pathname === item.href
-                      ? "bg-purple-800 text-white"
-                      : "text-purple-100 hover:bg-purple-600"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </Link>
-              ))}
+            {user &&
+              navItems
+                .filter((item) => item.roles.includes(user.role))
+                .map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center px-3 py-2 rounded-md text-lg font-medium transition-colors duration-150 ${
+                      pathname === item.href
+                        ? "bg-purple-800 text-white"
+                        : "text-purple-100 hover:bg-purple-600"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <item.icon className="mr-3 h-5 w-5" />
+                    {item.name}
+                  </Link>
+                ))}
 
-            {userRole === "student" && !isMentor && (
+            {user.role === UserRole.USER && !isMentor && (
               <Link
                 href="/become-a-mentor"
                 className={`flex items-center px-3 py-2 mt-4 rounded-md text-lg font-medium bg-purple-500 text-white hover:bg-purple-400 transition-colors duration-150 shadow-md ${poppins.className}`}

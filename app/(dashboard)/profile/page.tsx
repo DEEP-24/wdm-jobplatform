@@ -1,16 +1,18 @@
 "use client";
 
 import { format } from "date-fns";
-import { CalendarIcon, UserCircle, Mail, Phone, MapPin } from "lucide-react";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { CalendarIcon, Mail, MapPin, Phone, UserCircle } from "lucide-react";
 import { Poppins } from "next/font/google";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
+import { USA_STATES } from "@/app/constants/usa-states";
 import type { User } from "@/app/types/user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -18,7 +20,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,9 +32,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { USA_STATES } from "@/app/constants/usa-states";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -42,11 +40,13 @@ const poppins = Poppins({
 });
 
 export default function ProfilePage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<User | null>(null);
+
   const form = useForm<User & { notificationPreferences: string[]; notificationMessage: string }>({
     defaultValues: {
       id: "",
       email: "",
-      password: "",
       firstName: "",
       lastName: "",
       dob: "",
@@ -61,45 +61,71 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const user: User & { notificationPreferences?: string[]; notificationMessage?: string } =
-        JSON.parse(storedUser);
-      console.log("Loaded user data:", user);
-      form.reset({
-        ...user,
-        notificationPreferences: user.notificationPreferences || [],
-        notificationMessage: user.notificationMessage || "",
-      });
-    }
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/user/profile");
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const data = await response.json();
+        setUserData(data);
+
+        form.reset({
+          ...data,
+          notificationPreferences: data.notificationPreferences || [],
+          notificationMessage: data.notificationMessage || "",
+          password: "",
+        });
+      } catch (_error) {
+        toast({
+          title: "Error",
+          description: "Failed to load profile data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, [form]);
 
-  function onSubmit(
+  async function onSubmit(
     values: User & { notificationPreferences: string[]; notificationMessage: string },
   ) {
-    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
-    const userIndex = users.findIndex((user) => user.id === values.id);
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-    if (userIndex !== -1) {
-      users[userIndex] = {
-        ...users[userIndex],
-        ...values,
-      };
-      localStorage.setItem("users", JSON.stringify(users));
-      localStorage.setItem("currentUser", JSON.stringify(values));
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
 
       toast({
         title: "Profile Updated",
         description: "Your profile information has been successfully updated.",
       });
-      form.reset(values);
-    } else {
+    } catch (_error) {
       toast({
         title: "Error",
-        description: "User not found. Unable to update profile.",
+        description: "Failed to update profile. Please try again later.",
         variant: "destructive",
       });
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-100 to-white">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-700" />
+      </div>
+    );
   }
 
   return (
@@ -109,16 +135,23 @@ export default function ProfilePage() {
           <CardHeader className="text-center bg-purple-700 text-white p-8">
             <div className="mx-auto mb-6">
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                <AvatarImage src="/placeholder.svg?height=128&width=128" alt="Profile picture" />
+                <AvatarImage
+                  src="/placeholder.svg?height=128&width=128"
+                  alt={`${userData?.firstName} ${userData?.lastName}`}
+                />
                 <AvatarFallback>
-                  <UserCircle className="w-32 h-32" />
+                  {userData ? (
+                    `${userData.firstName[0]}${userData.lastName[0]}`
+                  ) : (
+                    <UserCircle className="w-32 h-32" />
+                  )}
                 </AvatarFallback>
               </Avatar>
             </div>
-            <CardTitle className="text-4xl font-bold mb-2">Your Profile</CardTitle>
-            <CardDescription className="text-purple-100 text-lg">
-              Update your profile details and preferences
-            </CardDescription>
+            <CardTitle className="text-4xl font-bold mb-2">
+              {userData ? `${userData.firstName} ${userData.lastName}'s Profile` : "Your Profile"}
+            </CardTitle>
+            <CardDescription className="text-purple-100 text-lg">{userData?.email}</CardDescription>
           </CardHeader>
           <CardContent className="p-8">
             <Form {...form}>

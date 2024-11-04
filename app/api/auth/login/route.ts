@@ -52,22 +52,20 @@ export async function POST(request: Request) {
         name: `${user.firstName} ${user.lastName}`,
       };
 
-      console.log("Setting session cookie with data:", sessionData); // Debug log
-
-      cookieStore.set("session", JSON.stringify(sessionData), {
+      cookieStore.set("auth-token", JSON.stringify(sessionData), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
       });
 
-      // Return success
       return NextResponse.json({
         success: true,
         user: sessionData,
       });
     } catch (error) {
-      console.error("Password comparison error:", error); // Debug log
+      console.error("Password comparison error:", error);
       throw error;
     }
   } catch (error) {
@@ -83,7 +81,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const cookieStore = cookies();
-  cookieStore.delete("session");
+  cookieStore.delete("auth-token");
 
   return NextResponse.json({ success: true });
 }
