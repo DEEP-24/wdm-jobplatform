@@ -39,11 +39,18 @@ const poppins = Poppins({
   display: "swap",
 });
 
+type ProfileFormValues = User & {
+  notificationPreferences: string[];
+  notificationMessage: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
 
-  const form = useForm<User & { notificationPreferences: string[]; notificationMessage: string }>({
+  const form = useForm<ProfileFormValues>({
     defaultValues: {
       id: "",
       email: "",
@@ -57,6 +64,8 @@ export default function ProfilePage() {
       zipcode: "",
       notificationPreferences: [],
       notificationMessage: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -64,20 +73,43 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/user/profile");
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const data = await response.json();
-        setUserData(data);
-
-        form.reset({
-          ...data,
-          notificationPreferences: data.notificationPreferences || [],
-          notificationMessage: data.notificationMessage || "",
-          password: "",
+        const response = await fetch("/api/auth/check", {
+          credentials: "include",
         });
-      } catch (_error) {
+
+        const data = await response.json();
+
+        if (!data.authenticated || !data.user) {
+          throw new Error("No user data found");
+        }
+
+        const user = data.user;
+        setUserData(user);
+
+        // Parse notification preferences if it's a string
+        let notificationPrefs = [];
+        try {
+          notificationPrefs = user.notificationPreferences
+            ? JSON.parse(user.notificationPreferences)
+            : [];
+        } catch {
+          notificationPrefs = [];
+        }
+
+        // Format the data for the form
+        form.reset({
+          ...user,
+          notificationPreferences: notificationPrefs,
+          notificationMessage: "",
+          dob: user.dob || "",
+          phoneNo: user.phoneNo || "",
+          street: user.street || "",
+          city: user.city || "",
+          state: user.state || "",
+          zipcode: user.zipcode || "",
+        });
+      } catch (error) {
+        console.error("Profile fetch error:", error);
         toast({
           title: "Error",
           description: "Failed to load profile data. Please try again later.",
@@ -91,27 +123,54 @@ export default function ProfilePage() {
     fetchUserData();
   }, [form]);
 
-  async function onSubmit(
-    values: User & { notificationPreferences: string[]; notificationMessage: string },
-  ) {
+  async function onSubmit(values: ProfileFormValues) {
     try {
+      if (
+        (values.password || values.confirmPassword) &&
+        values.password !== values.confirmPassword
+      ) {
+        toast({
+          title: "Error",
+          description: "Passwords do not match",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const dataToSend = {
+        ...values,
+        notificationPreferences: JSON.stringify(values.notificationPreferences),
+        password: values.password || undefined,
+      };
+
+      // Remove confirmPassword before sending
+      delete (dataToSend as any).confirmPassword;
+      delete (dataToSend as any).notificationMessage;
+
       const response = await fetch("/api/user/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(dataToSend),
+        credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        });
+
+        form.setValue("password", "");
+        form.setValue("confirmPassword", "");
+      } else {
+        throw new Error(data.error || "Failed to update profile");
       }
-
-      toast({
-        title: "Profile Updated",
-        description: "Your profile information has been successfully updated.",
-      });
-    } catch (_error) {
+    } catch (error) {
+      console.error("Profile update error:", error);
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again later.",
@@ -141,7 +200,7 @@ export default function ProfilePage() {
                 />
                 <AvatarFallback>
                   {userData ? (
-                    `${userData.firstName[0]}${userData.lastName[0]}`
+                    `${userData.firstName}${userData.lastName}`
                   ) : (
                     <UserCircle className="w-32 h-32" />
                   )}
@@ -202,8 +261,9 @@ export default function ProfilePage() {
                         <FormControl>
                           <div className="relative">
                             <Input
-                              placeholder="johndoe@example.com"
                               {...field}
+                              type="email"
+                              placeholder="email@example.com"
                               className="bg-gray-50 border-purple-200 pl-10"
                             />
                             <Mail
@@ -215,24 +275,47 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-purple-800 font-semibold">Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="********"
-                            {...field}
-                            className="bg-gray-50 border-purple-200"
-                          />
-                        </FormControl>
-                        <FormDescription>Leave blank to keep current password</FormDescription>
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-purple-800 font-semibold">
+                            New Password
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter new password"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
+                          </FormControl>
+                          <FormDescription>Leave blank to keep current password</FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-purple-800 font-semibold">
+                            Confirm New Password
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Confirm new password"
+                              {...field}
+                              className="bg-gray-50 border-purple-200"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <div className="grid gap-6 sm:grid-cols-2 items-center justify-center">
                     <FormField
                       control={form.control}
@@ -252,7 +335,7 @@ export default function ProfilePage() {
                                   }`}
                                 >
                                   {field.value ? (
-                                    format(new Date(field.value), "PPP")
+                                    format(field.value ? new Date(field.value) : new Date(), "PPP")
                                   ) : (
                                     <span>Pick a date</span>
                                   )}
@@ -264,8 +347,9 @@ export default function ProfilePage() {
                               <Calendar
                                 mode="single"
                                 selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={(date) =>
-                                  field.onChange(date ? date.toISOString().split("T")[0] : "")
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
                                 }
                                 initialFocus
                               />

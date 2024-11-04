@@ -20,7 +20,7 @@ async function main() {
       phoneNo: "+1234567890",
       street: "123 Admin Street",
       city: "Admin City",
-      state: "AS",
+      state: "California",
       zipcode: "12345",
     },
   });
@@ -38,7 +38,7 @@ async function main() {
       phoneNo: "+1987654321",
       street: "456 Business Ave",
       city: "Enterprise City",
-      state: "EC",
+      state: "New York",
       zipcode: "67890",
     },
   });
@@ -56,7 +56,7 @@ async function main() {
       phoneNo: "+1122334455",
       street: "789 Mentor Lane",
       city: "Knowledge City",
-      state: "KC",
+      state: "Texas",
       zipcode: "34567",
     },
   });
@@ -74,7 +74,7 @@ async function main() {
       phoneNo: "+1555666777",
       street: "321 Event Street",
       city: "Festival City",
-      state: "FC",
+      state: "Florida",
       zipcode: "89012",
     },
   });
@@ -92,7 +92,7 @@ async function main() {
       phoneNo: "+1999888777",
       street: "555 User Road",
       city: "User City",
-      state: "UC",
+      state: "Washington",
       zipcode: "45678",
     },
   });

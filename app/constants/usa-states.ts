@@ -48,5 +48,5 @@ export const USA_STATES = [
   "Washington",
   "West Virginia",
   "Wisconsin",
-  "Wyoming",
-];
+  "Wyoming"
+] as const;
