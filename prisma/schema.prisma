@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id                  String    @id @default(uuid()) @map("id")
+  firstName           String    @map("firstName")
+  lastName            String    @map("lastName")
+  password            String
+  email               String    @unique
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastPasswordResetAt DateTime?
+  role                UserRole  @default(USER)
+}
+
+// // Profile Model
+// model Profile {
+//   id                 String   @id @default(uuid())
+//   phone              String
+//   streetAddress      String
+//   city               String
+//   state              String
+//   postalCode         String
+//   country            String
+//   dob                DateTime
+//   academicBackground String?
+//   interests          String?
+//   skills             String?
+//   userId             String   @unique
+//   user               User     @relation(fields: [userId], references: [id])
+// }
+
+// // Follower Model
+// model Follower {
+//   id          String   @id @default(uuid())
+//   followerId  String
+//   followingId String
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+//   follower    User     @relation("UserFollowers", fields: [followerId], references: [id])
+//   following   User     @relation("UserFollowing", fields: [followingId], references: [id])
+
+//   @@unique([followerId, followingId])
+// }
+
+// // Message Model
+// model Message {
+//   id         String   @id @default(uuid())
+//   senderId   String
+//   receiverId String
+//   content    String
+//   sentAt     DateTime @default(now())
+//   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+//   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+// }
+
+// // JobListing Model
+// model JobListing {
+//   id                  String           @id @default(uuid())
+//   title               String
+//   company             String
+//   location            String?
+//   listingType         ListingType
+//   jobType             JobType
+//   workArrangement     WorkArrangement
+//   isInternshipPaid    Boolean?
+//   description         String
+//   requirements        String?
+//   responsibilities    String?
+//   salaryRange         String?
+//   applicationDeadline DateTime?
+//   startDate           DateTime?
+//   duration            String?
+//   postedBy            String
+//   postedAt            DateTime         @default(now())
+//   lastUpdated         DateTime         @updatedAt
+//   status              Status           @default(Open)
+//   user                User             @relation(fields: [postedBy], references: [id])
+//   requiredSkills      RequiredSkill[]
+//   applications        JobApplication[]
+//   savedJobs           SavedJob[]
+// }
+
+// // RequiredSkill Model
+// model RequiredSkill {
+//   id        String     @id @default(uuid())
+//   jobId     String
+//   skillName String
+//   job       JobListing @relation(fields: [jobId], references: [id])
+// }
+
+// // JobApplication Model
+// model JobApplication {
+//   id                       String     @id @default(uuid())
+//   jobId                    String
+//   applicantId              String
+//   resumeURL                String?
+//   coverLetterURL           String?
+//   linkedInURL              String?
+//   additionalDocumentsR2URL String?
+//   applicationStatus        String?
+//   submittedAt              DateTime   @default(now())
+//   lastUpdated              DateTime   @updatedAt
+//   notes                    String?
+//   job                      JobListing @relation(fields: [jobId], references: [id])
+//   applicant                User       @relation(fields: [applicantId], references: [id])
+// }
+
+// // SavedJob Model
+// model SavedJob {
+//   id      String     @id @default(uuid())
+//   userId  String
+//   jobId   String
+//   savedAt DateTime   @default(now())
+//   user    User       @relation(fields: [userId], references: [id])
+//   job     JobListing @relation(fields: [jobId], references: [id])
+// }
+
+// // Event Model
+// model Event {
+//   id                   String              @id @default(uuid())
+//   title                String
+//   description          String?
+//   eventType            String?
+//   startDate            DateTime
+//   endDate              DateTime
+//   location             String?
+//   isVirtual            Boolean             @default(false)
+//   maxAttendees         Int?
+//   registrationDeadline DateTime?
+//   status               String?
+//   createdAt            DateTime            @default(now())
+//   lastUpdated          DateTime            @updatedAt
+//   sessions             EventSession[]
+//   registrations        EventRegistration[]
+// }
+
+// // EventSession Model
+// model EventSession {
+//   id            String              @id @default(uuid())
+//   eventId       String
+//   title         String
+//   description   String?
+//   startTime     DateTime?
+//   endTime       DateTime?
+//   location      String?
+//   maxAttendees  Int?
+//   event         Event               @relation(fields: [eventId], references: [id])
+//   registrations EventRegistration[]
+// }
+
+// // EventRegistration Model
+// model EventRegistration {
+//   id          String       @id @default(uuid())
+//   eventId     String
+//   sessionId   String
+//   userId      String
+//   bookingDate DateTime     @default(now())
+//   event       Event        @relation(fields: [eventId], references: [id])
+//   session     EventSession @relation(fields: [sessionId], references: [id])
+//   user        User         @relation(fields: [userId], references: [id])
+// }
+
+// // Resource Model
+// model Resource {
+//   id          String   @id @default(uuid())
+//   title       String
+//   description String?
+//   type        String?
+//   url         String
+//   tags        String?
+//   createdAt   DateTime @default(now())
+//   uploadedBy  String
+//   user        User     @relation(fields: [uploadedBy], references: [id])
+// }
+
+// // MentorProfile Model
+// model MentorProfile {
+//   id                String  @id @default(uuid())
+//   userId            String  @unique
+//   expertise         String?
+//   yearsOfExperience Int?
+//   maxMentees        Int?
+//   user              User    @relation(fields: [userId], references: [id])
+// }
+
+// // MenteeProfile Model
+// model MenteeProfile {
+//   id                     String    @id @default(uuid())
+//   userId                 String    @unique
+//   academicLevel          String?
+//   fieldOfStudy           String?
+//   careerGoals            String?
+//   areasOfInterest        String?
+//   expectedGraduationDate DateTime?
+//   user                   User      @relation(fields: [userId], references: [id])
+// }
+
+// // MentorshipProgram Model
+// model MentorshipProgram {
+//   id              String    @id @default(uuid())
+//   name            String
+//   description     String?
+//   startDate       DateTime?
+//   endDate         DateTime?
+//   programType     String?
+//   maxParticipants Int?
+//   status          String?
+//   createdBy       String
+//   createdAt       DateTime  @default(now())
+//   user            User      @relation(fields: [createdBy], references: [id])
+// }
+
+// // MentorshipSession Model
+// model MentorshipSession {
+//   id          String    @id @default(uuid())
+//   mentorId    String
+//   menteeId    String
+//   sessionDate DateTime?
+//   startTime   DateTime?
+//   endTime     DateTime?
+//   sessionType String?
+//   mentor      User      @relation("MentorSessions", fields: [mentorId], references: [id])
+//   mentee      User      @relation("MenteeSessions", fields: [menteeId], references: [id])
+// }
+
+enum UserRole {
+  ADMIN
+  EMPLOYER
+  MENTOR
+  ORGANIZER
+  USER
+}
+
+// // Enums
+// enum ListingType {
+//   Job
+//   Internship
+// }
+
+// enum JobType {
+//   Full_time
+//   Part_time
+//   Contract
+// }
+
+// enum WorkArrangement {
+//   On_site
+//   Remote
+//   Hybrid
+// }
+
+// enum Status {
+//   Open
+//   Closed
+//   Filled
+// }

@@ -1,15 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { USA_STATES } from "@/app/constants/usa-states";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import type { User, UserRole } from "@/app/types/user";
-import { useRouter } from "next/navigation";
-import { LockIcon, MailIcon, UserIcon, CalendarIcon, PhoneIcon, MapPinIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,79 +12,128 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { USA_STATES } from "@/app/constants/usa-states";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserRole } from "@prisma/client";
+import {
+  CalendarIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LockIcon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  UserIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { Controller, useForm } from "react-hook-form";
+import type { z } from "zod";
+import { registerSchema } from "@/app/schema";
+import { toast } from "@/hooks/use-toast";
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<Omit<User, "id"> & { confirmPassword: string }>({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    dob: "",
-    phoneNo: "",
-    street: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    role: "student" as UserRole,
+  const [step, setStep] = React.useState(1);
+  const router = useRouter();
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+      firstName: "",
+      lastName: "",
+      dob: "",
+      phoneNo: "",
+      street: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      role: UserRole.USER,
+    },
   });
 
-  const { toast } = useToast();
-  const router = useRouter();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleStateChange = (value: string) => {
-    setFormData({ ...formData, state: value });
-  };
-
-  const handleNextStep = () => {
-    setStep(step + 1);
+  const handleNextStep = async () => {
+    try {
+      if (step === 1) {
+        const stepValid = await form.trigger(["email", "password", "confirmPassword"]);
+        if (!stepValid) {
+          return;
+        }
+        setStep(2);
+      } else if (step === 2) {
+        const stepValid = await form.trigger(["firstName", "lastName", "dob", "phoneNo"]);
+        if (!stepValid) {
+          return;
+        }
+        setStep(3);
+      }
+    } catch (error) {
+      console.error("Step validation error:", error);
+    }
   };
 
   const handlePrevStep = () => {
     setStep(step - 1);
   };
 
-  const handleRoleChange = (value: UserRole) => {
-    setFormData({ ...formData, role: value });
-  };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
+  const onSubmit = async (values: RegisterFormValues) => {
+    if (step !== 3) {
       return;
     }
-    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
-    if (users.some((u: User) => u.email === formData.email)) {
-      toast({
-        title: "Error",
-        description: "User already exists.",
-        variant: "destructive",
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
       });
-    } else {
-      const { confirmPassword, ...userWithoutConfirmPassword } = formData;
-      const newId = users.length > 0 ? String(Number(users[users.length - 1].id) + 1) : "1";
-      const newUser: User = {
-        ...userWithoutConfirmPassword,
-        id: newId,
-      };
-      users.push(newUser);
-      localStorage.setItem("users", JSON.stringify(users));
-      toast({
-        title: "Success",
-        description: "You have successfully registered.",
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          if (Array.isArray(data.error)) {
+            data.error.forEach((err: any) => {
+              form.setError(err.path[0] as any, {
+                message: err.message,
+              });
+            });
+          } else {
+            form.setError("root", {
+              message: data.error || "Registration failed",
+            });
+          }
+          return;
+        }
+
+        throw new Error(data.error || "Registration failed");
+      }
+
+      if (data.success) {
+        toast({
+          title: "Registration successful",
+          description: "Please login to continue",
+        });
+
+        router.push("/login");
+      } else {
+        form.setError("root", {
+          message: "Registration failed. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      form.setError("root", {
+        message: error instanceof Error ? error.message : "Something went wrong. Please try again.",
       });
-      router.push("/login");
     }
   };
 
@@ -101,29 +145,31 @@ export default function Register() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <form onSubmit={handleRegister} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {form.formState.errors.root && (
+            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+              {form.formState.errors.root.message}
+            </div>
+          )}
+
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email address
-                </Label>
+                <Label htmlFor="email">Email address</Label>
                 <div className="relative">
                   <MailIcon
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                     size={18}
                   />
                   <Input
-                    id="email"
-                    name="email"
+                    {...form.register("email")}
                     type="email"
-                    autoComplete="email"
-                    required
                     className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.email}
-                    onChange={handleChange}
                   />
                 </div>
+                {form.formState.errors.email && (
+                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700">
@@ -135,16 +181,21 @@ export default function Register() {
                     size={18}
                   />
                   <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.password}
-                    onChange={handleChange}
+                    {...form.register("password")}
+                    type={showPassword ? "text" : "password"}
+                    className="pl-10 pr-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                  </button>
                 </div>
+                {form.formState.errors.password && (
+                  <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
@@ -156,16 +207,23 @@ export default function Register() {
                     size={18}
                   />
                   <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
+                    {...form.register("confirmPassword")}
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="pl-10 pr-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                  </button>
                 </div>
+                {form.formState.errors.confirmPassword && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -183,16 +241,16 @@ export default function Register() {
                       size={18}
                     />
                     <Input
-                      id="firstName"
-                      name="firstName"
+                      {...form.register("firstName")}
                       type="text"
-                      autoComplete="given-name"
-                      required
                       className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                      value={formData.firstName}
-                      onChange={handleChange}
                     />
                   </div>
+                  {form.formState.errors.firstName && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.firstName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
@@ -204,16 +262,14 @@ export default function Register() {
                       size={18}
                     />
                     <Input
-                      id="lastName"
-                      name="lastName"
+                      {...form.register("lastName")}
                       type="text"
-                      autoComplete="family-name"
-                      required
                       className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                      value={formData.lastName}
-                      onChange={handleChange}
                     />
                   </div>
+                  {form.formState.errors.lastName && (
+                    <p className="text-sm text-red-500">{form.formState.errors.lastName.message}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -226,15 +282,14 @@ export default function Register() {
                     size={18}
                   />
                   <Input
-                    id="dob"
-                    name="dob"
+                    {...form.register("dob")}
                     type="date"
-                    required
                     className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.dob}
-                    onChange={handleChange}
                   />
                 </div>
+                {form.formState.errors.dob && (
+                  <p className="text-sm text-red-500">{form.formState.errors.dob.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phoneNo" className="text-sm font-medium text-gray-700">
@@ -246,16 +301,14 @@ export default function Register() {
                     size={18}
                   />
                   <Input
-                    id="phoneNo"
-                    name="phoneNo"
+                    {...form.register("phoneNo")}
                     type="tel"
-                    autoComplete="tel"
-                    required
                     className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.phoneNo}
-                    onChange={handleChange}
                   />
                 </div>
+                {form.formState.errors.phoneNo && (
+                  <p className="text-sm text-red-500">{form.formState.errors.phoneNo.message}</p>
+                )}
               </div>
             </div>
           )}
@@ -272,15 +325,14 @@ export default function Register() {
                     size={18}
                   />
                   <Input
-                    id="street"
-                    name="street"
+                    {...form.register("street")}
                     type="text"
-                    required
                     className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.street}
-                    onChange={handleChange}
                   />
                 </div>
+                {form.formState.errors.street && (
+                  <p className="text-sm text-red-500">{form.formState.errors.street.message}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -288,31 +340,36 @@ export default function Register() {
                     City
                   </Label>
                   <Input
-                    id="city"
-                    name="city"
+                    {...form.register("city")}
                     type="text"
-                    required
                     className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                    value={formData.city}
-                    onChange={handleChange}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="state" className="text-sm font-medium text-gray-700">
                     State
                   </Label>
-                  <Select onValueChange={handleStateChange} value={formData.state}>
-                    <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500">
-                      <SelectValue placeholder="Select a state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USA_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="state"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500">
+                          <SelectValue placeholder="Select a state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {USA_STATES.map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {form.formState.errors.state && (
+                    <p className="text-sm text-red-500">{form.formState.errors.state.message}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -320,31 +377,40 @@ export default function Register() {
                   Zipcode
                 </Label>
                 <Input
-                  id="zipcode"
-                  name="zipcode"
+                  {...form.register("zipcode")}
                   type="text"
-                  required
+                  maxLength={5}
                   className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
-                  value={formData.zipcode}
-                  onChange={handleChange}
                 />
+                {form.formState.errors.zipcode && (
+                  <p className="text-sm text-red-500">{form.formState.errors.zipcode.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role" className="text-sm font-medium text-gray-700">
                   Role
                 </Label>
-                <Select onValueChange={handleRoleChange} value={formData.role}>
-                  <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="employer">Employer</SelectItem>
-                    <SelectItem value="organizer">Organizer</SelectItem>
-                    <SelectItem value="mentor">Mentor</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="role"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500">
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UserRole.USER}>User</SelectItem>
+                        <SelectItem value={UserRole.EMPLOYER}>Employer</SelectItem>
+                        <SelectItem value={UserRole.ORGANIZER}>Organizer</SelectItem>
+                        <SelectItem value={UserRole.MENTOR}>Mentor</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.role && (
+                  <p className="text-sm text-red-500">{form.formState.errors.role.message}</p>
+                )}
               </div>
             </div>
           )}
