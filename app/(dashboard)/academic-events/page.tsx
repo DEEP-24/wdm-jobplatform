@@ -20,14 +20,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { formatDate } from "@/hooks/misc";
 import { useToast } from "@/hooks/use-toast";
+import { getEventTypeLabel } from "@/lib/event-type-labels";
 import { cn } from "@/lib/utils";
-import { Montserrat, Open_Sans } from "next/font/google";
-import { addDays, format, isSameDay, parseISO } from "date-fns";
+import { EventType } from "@prisma/client";
+import { format, parseISO } from "date-fns";
 import { Clock, MapPin, Plus } from "lucide-react";
+import { Montserrat, Open_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import * as React from "react";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -43,7 +45,7 @@ interface AcademicEvent {
   id: string;
   title: string;
   description: string;
-  eventType: "Conference" | "Workshop" | "Seminar";
+  eventType: EventType;
   startDate: string;
   endDate: string;
   location: string;
@@ -63,188 +65,115 @@ interface AcademicEvent {
   }[];
 }
 
-const formatDate = (date: Date) => format(date, "yyyy-MM-dd");
-
-const createDefaultEvents = () => {
-  const today = new Date();
-  const tomorrow = addDays(today, 1);
-
-  return [
-    {
-      id: "1",
-      title: "AI in Academia Conference 2024",
-      description: "Annual gathering of AI researchers and academics.",
-      eventType: "Conference",
-      startDate: formatDate(today),
-      endDate: formatDate(tomorrow),
-      location: "Stanford University, CA",
-      isVirtual: false,
-      maxAttendees: 500,
-      registrationDeadline: formatDate(today),
-      status: "Upcoming",
-      sessions: [
-        {
-          id: "101",
-          eventId: "1",
-          title: "Keynote: Future of AI in Education",
-          description: "Opening keynote discussing the impact of AI on education.",
-          startTime: `${formatDate(today)}T09:00:00`,
-          endTime: `${formatDate(today)}T10:30:00`,
-          location: "Main Auditorium",
-          maxAttendees: 500,
-        },
-        {
-          id: "102",
-          eventId: "1",
-          title: "Workshop: Implementing AI in Curriculum",
-          description: "Hands-on workshop on integrating AI into academic curricula.",
-          startTime: `${formatDate(today)}T11:00:00`,
-          endTime: `${formatDate(today)}T13:00:00`,
-          location: "Workshop Room A",
-          maxAttendees: 50,
-        },
-      ],
-    },
-    {
-      id: "2",
-      title: "Data Science in Research Symposium",
-      description: "Exploring the role of data science in academic research.",
-      eventType: "Conference",
-      startDate: formatDate(today),
-      endDate: formatDate(tomorrow),
-      location: "MIT, Cambridge, MA",
-      isVirtual: false,
-      maxAttendees: 300,
-      registrationDeadline: formatDate(today),
-      status: "Upcoming",
-      sessions: [
-        {
-          id: "201",
-          eventId: "2",
-          title: "Data Visualization Techniques",
-          description: "Advanced techniques for visualizing complex research data.",
-          startTime: `${formatDate(today)}T10:00:00`,
-          endTime: `${formatDate(today)}T12:00:00`,
-          location: "Lecture Hall 1",
-          maxAttendees: 100,
-        },
-      ],
-    },
-    {
-      id: "3",
-      title: "Academic Writing Workshop",
-      description: "Improving academic writing skills for researchers and students.",
-      eventType: "Workshop",
-      startDate: formatDate(tomorrow),
-      endDate: formatDate(tomorrow),
-      location: "Online",
-      isVirtual: true,
-      maxAttendees: 100,
-      registrationDeadline: formatDate(today),
-      status: "Upcoming",
-      sessions: [
-        {
-          id: "301",
-          eventId: "3",
-          title: "Effective Academic Writing Techniques",
-          description: "Learn strategies for clear and impactful academic writing.",
-          startTime: `${formatDate(tomorrow)}T14:00:00`,
-          endTime: `${formatDate(tomorrow)}T16:00:00`,
-          location: "Virtual Room 1",
-          maxAttendees: 100,
-        },
-      ],
-    },
-  ];
-};
-
-const eventTypes = ["Conference", "Workshop", "Seminar"] as const;
-type EventType = (typeof eventTypes)[number];
+const eventTypes = Object.values(EventType);
+type EventTypeWithAll = EventType | "All";
 
 export default function AcademicEventsPage() {
-  const [events, setEvents] = useState<AcademicEvent[]>([]);
-  const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
+  const [events, setEvents] = React.useState<AcademicEvent[]>([]);
+  const [registeredSessions, setRegisteredSessions] = React.useState<string[]>([]);
   const { toast } = useToast();
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<EventType | "All">("All");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [currentUser, setCurrentUser] = useState<{
+  const [selectedType, setSelectedType] = React.useState<EventTypeWithAll>("All");
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
+  const [currentUser, setCurrentUser] = React.useState<{
     id: string;
     role: string;
   } | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = React.useState<AcademicEvent | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  useEffect(() => {
-    const defaultEvents = createDefaultEvents();
-    let storedEvents = JSON.parse(localStorage.getItem("academicEvents") || "[]");
-    if (storedEvents.length === 0) {
-      storedEvents = defaultEvents;
-      localStorage.setItem("academicEvents", JSON.stringify(storedEvents));
-    }
-    setEvents(storedEvents);
-
-    const storedUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-    setCurrentUser(storedUser);
-
-    if (storedUser) {
-      const reservations = JSON.parse(localStorage.getItem("academicEventReservations") || "[]");
-      const userReservations = reservations.filter((r: any) => r.userId === storedUser.id);
-      setRegisteredSessions(userReservations.map((r: any) => r.sessionId));
-    }
-  }, []);
-
-  const handleRegister = (eventId: string, sessionId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    const session = event?.sessions.find((s) => s.id === sessionId);
-    if (session && event) {
-      const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-      if (!currentUser) {
+  React.useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch("/api/academic-events");
+        if (!response.ok) {
+          throw new Error("Failed to fetch events");
+        }
+        const data = await response.json();
+        setEvents(data);
+      } catch (_error) {
         toast({
           title: "Error",
-          description: "You must be logged in to register for events.",
+          description: "Failed to load academic events",
           variant: "destructive",
         });
-        return;
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      if (registeredSessions.includes(sessionId)) {
-        toast({
-          title: "Already Registered",
-          description: "You have already registered for this session.",
-          variant: "default",
-        });
-        return;
+    const fetchUserAndRegistrations = async () => {
+      try {
+        // Fetch current user
+        const userResponse = await fetch("/api/user/profile");
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData);
+
+          // Fetch user's registrations
+          const registrationsResponse = await fetch("/api/academic-events/registrations");
+          if (registrationsResponse.ok) {
+            const registrationsData = await registrationsResponse.json();
+            setRegisteredSessions(registrationsData.map((r: any) => r.sessionId));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
       }
+    };
 
-      const reservation = {
-        id: uuidv4(),
-        userId: currentUser.id,
-        eventId: event.id,
-        eventTitle: event.title,
-        eventDescription: event.description,
-        eventType: event.eventType,
-        eventStartDate: event.startDate,
-        eventEndDate: event.endDate,
-        eventLocation: event.location,
-        sessionId: session.id,
-        sessionTitle: session.title,
-        sessionDescription: session.description,
-        sessionStartTime: session.startTime,
-        sessionEndTime: session.endTime,
-        sessionLocation: session.location,
-      };
+    fetchEvents();
+    fetchUserAndRegistrations();
+  }, [toast]);
 
-      const reservations = JSON.parse(localStorage.getItem("academicEventReservations") || "[]");
-      reservations.push(reservation);
-      localStorage.setItem("academicEventReservations", JSON.stringify(reservations));
+  const handleRegister = async (eventId: string, sessionId: string) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to register for events.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registeredSessions.includes(sessionId)) {
+      toast({
+        title: "Already Registered",
+        description: "You have already registered for this session.",
+        variant: "default",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/academic-events/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId,
+          sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Registration failed");
+      }
 
       setRegisteredSessions((prev) => [...prev, sessionId]);
       toast({
         title: "Registration Successful",
-        description: `You have been registered for the session: ${session.title}`,
+        description: "You have been registered for the session",
       });
 
       router.push("/reservations");
+    } catch (_error) {
+      toast({
+        title: "Error",
+        description: "Failed to register for the session",
+        variant: "destructive",
+      });
     }
   };
 
@@ -259,9 +188,19 @@ export default function AcademicEventsPage() {
     const eventStart = parseISO(event.startDate);
     const eventEnd = parseISO(event.endDate);
     return (
-      selectedDate && (isSameDay(selectedDate, eventStart) || isSameDay(selectedDate, eventEnd))
+      selectedDate &&
+      selectedDate.setHours(0, 0, 0, 0) >= eventStart.setHours(0, 0, 0, 0) &&
+      selectedDate.setHours(0, 0, 0, 0) <= eventEnd.setHours(0, 0, 0, 0)
     );
   });
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full ${openSans.className}`}>
@@ -270,7 +209,7 @@ export default function AcademicEventsPage() {
           <h2 className={`text-3xl font-bold ${montserrat.className}`}>Upcoming Academic Events</h2>
           <div className="flex items-center space-x-4 flex-wrap gap-4">
             <Select
-              onValueChange={(value) => setSelectedType(value as EventType | "All")}
+              onValueChange={(value) => setSelectedType(value as EventTypeWithAll)}
               defaultValue="All"
             >
               <SelectTrigger className="w-[180px] bg-white text-purple-900">
@@ -280,7 +219,7 @@ export default function AcademicEventsPage() {
                 <SelectItem value="All">All Types</SelectItem>
                 {eventTypes.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type}
+                    {getEventTypeLabel(type)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -329,13 +268,12 @@ export default function AcademicEventsPage() {
                         </CardHeader>
                         <CardContent>
                           <Badge variant="secondary" className="mb-2">
-                            {event.eventType}
+                            {getEventTypeLabel(event.eventType)}
                           </Badge>
                           <div className="flex items-center mb-2">
                             <Clock className="h-4 w-4 mr-2 text-gray-500" />
                             <p className="text-sm">
-                              {format(parseISO(event.startDate), "h:mm a")} -{" "}
-                              {format(parseISO(event.endDate), "h:mm a")}
+                              {formatDate(event.startDate)} - {formatDate(event.endDate)}
                             </p>
                           </div>
                           <div className="flex items-center mb-4">
@@ -364,7 +302,7 @@ export default function AcademicEventsPage() {
                                   {selectedEvent && (
                                     <>
                                       <Badge variant="secondary" className="mb-2">
-                                        {selectedEvent.eventType}
+                                        {getEventTypeLabel(selectedEvent.eventType)}
                                       </Badge>
                                       <p className="text-sm text-gray-600 mb-2">
                                         {selectedEvent.description}
@@ -372,7 +310,8 @@ export default function AcademicEventsPage() {
                                       <div className="flex items-center mb-2">
                                         <Clock className="h-4 w-4 mr-2 text-gray-500" />
                                         <p className="text-sm">
-                                          {selectedEvent.startDate} to {selectedEvent.endDate}
+                                          {formatDate(selectedEvent.startDate)} -{" "}
+                                          {formatDate(selectedEvent.endDate)}
                                         </p>
                                       </div>
                                       <div className="flex items-center mb-4">
@@ -398,8 +337,8 @@ export default function AcademicEventsPage() {
                                           <div className="flex items-center mb-2">
                                             <Clock className="h-4 w-4 mr-2 text-gray-500" />
                                             <p className="text-sm">
-                                              {format(parseISO(session.startTime), "h:mm a")} -{" "}
-                                              {format(parseISO(session.endTime), "h:mm a")}
+                                              {formatDate(session.startTime, "time")} -{" "}
+                                              {formatDate(session.endTime, "time")}
                                             </p>
                                           </div>
                                           <div className="flex items-center mb-2">

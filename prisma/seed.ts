@@ -1,14 +1,15 @@
-import { hashPassword } from "@/hooks/misc";
-import { PrismaClient, UserRole } from "@prisma/client";
+import { hashPassword } from "@/lib/server/misc";
+import { PrismaClient, UserRole, EventType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear existing data
+  await prisma.eventSession.deleteMany();
+  await prisma.event.deleteMany();
   await prisma.profile.deleteMany();
+  await prisma.eventRegistration.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create admin user
   await prisma.user.create({
     data: {
       email: "admin@example.com",
@@ -34,7 +35,6 @@ async function main() {
     },
   });
 
-  // Create employer user
   await prisma.user.create({
     data: {
       email: "employer@example.com",
@@ -59,7 +59,6 @@ async function main() {
     },
   });
 
-  // Create mentor user
   await prisma.user.create({
     data: {
       email: "mentor@example.com",
@@ -84,7 +83,6 @@ async function main() {
     },
   });
 
-  // Create organizer user
   await prisma.user.create({
     data: {
       email: "organizer@example.com",
@@ -109,7 +107,6 @@ async function main() {
     },
   });
 
-  // Create regular user
   await prisma.user.create({
     data: {
       email: "user@example.com",
@@ -130,6 +127,80 @@ async function main() {
           interests: "Technology, Programming",
           skills: "JavaScript, React, Node.js",
         },
+      },
+    },
+  });
+
+  const organizerUser = await prisma.user.findUnique({ where: { email: "organizer@example.com" } });
+
+  await prisma.event.create({
+    data: {
+      title: "Annual Tech Conference",
+      description: "Join us for the biggest tech conference of the year",
+      eventType: EventType.CONFERENCE,
+      startDate: new Date("2024-11-18T09:00:00Z"),
+      endDate: new Date("2024-11-20T17:00:00Z"),
+      location: "Tech Convention Center",
+      isVirtual: false,
+      maxAttendees: 500,
+      registrationDeadline: new Date("2024-11-15T23:59:59Z"),
+      status: "UPCOMING",
+      userId: organizerUser!.id,
+      sessions: {
+        create: [
+          {
+            title: "Keynote Speech",
+            description: "Opening ceremony and keynote presentation",
+            startTime: new Date("2024-11-18T09:00:00Z"),
+            endTime: new Date("2024-11-18T10:30:00Z"),
+            location: "Main Hall",
+            maxAttendees: 500,
+          },
+          {
+            title: "Web Development Workshop",
+            description: "Hands-on workshop on modern web development",
+            startTime: new Date("2024-11-18T11:00:00Z"),
+            endTime: new Date("2024-11-18T13:00:00Z"),
+            location: "Workshop Room A",
+            maxAttendees: 50,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.event.create({
+    data: {
+      title: "Career Development Workshop",
+      description: "Connect with top employers in the tech industry",
+      eventType: EventType.WORKSHOP,
+      startDate: new Date("2024-11-25T10:00:00Z"),
+      endDate: new Date("2024-11-25T16:00:00Z"),
+      location: "University Campus Center",
+      isVirtual: false,
+      maxAttendees: 300,
+      registrationDeadline: new Date("2024-11-22T23:59:59Z"),
+      status: "UPCOMING",
+      userId: organizerUser!.id,
+      sessions: {
+        create: [
+          {
+            title: "Resume Review Session",
+            description: "Get your resume reviewed by HR professionals",
+            startTime: new Date("2024-11-25T10:30:00Z"),
+            endTime: new Date("2024-11-25T12:30:00Z"),
+            location: "Room 101",
+            maxAttendees: 50,
+          },
+          {
+            title: "Interview Skills Workshop",
+            description: "Learn effective interviewing techniques",
+            startTime: new Date("2024-11-25T13:30:00Z"),
+            endTime: new Date("2024-11-25T15:30:00Z"),
+            location: "Room 102",
+            maxAttendees: 40,
+          },
+        ],
       },
     },
   });

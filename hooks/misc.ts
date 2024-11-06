@@ -1,5 +1,9 @@
-import * as argon2 from "argon2";
+import { format, parseISO } from "date-fns";
 
-export async function hashPassword(password: string) {
-  return await argon2.hash(password);
-}
+export const formatDate = (dateString: string, type: "date" | "time" = "date") => {
+  const date = parseISO(dateString);
+  if (type === "time") {
+    return format(date, "h:mm a");
+  }
+  return format(date, "MMM d, h:mm a");
+};

@@ -1,4 +1,4 @@
-import { hashPassword } from "@/hooks/misc";
+import { hashPassword } from "@/lib/server/misc";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
