@@ -21,15 +21,19 @@ export async function GET() {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
         role: true,
-        dob: true,
-        phoneNo: true,
-        street: true,
-        city: true,
-        state: true,
-        zipcode: true,
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            dob: true,
+            phone: true,
+            streetAddress: true,
+            city: true,
+            state: true,
+            postalCode: true,
+          },
+        },
         notificationPreferences: true,
         lastPasswordResetAt: true,
         createdAt: true,
@@ -45,7 +49,7 @@ export async function GET() {
       authenticated: true,
       user: {
         ...user,
-        dob: user.dob?.toISOString().split("T")[0], // Format date for frontend
+        dob: user.profile?.dob?.toISOString().split("T")[0], // Format date for frontend
       },
     });
   } catch (error) {

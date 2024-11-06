@@ -7,11 +7,9 @@ import { registerSchema } from "../../../schema";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("Received registration data:", body);
 
     const validatedData = registerSchema.parse(body);
 
-    // Check if user already exists
     const existingUser = await db.user.findUnique({
       where: { email: validatedData.email },
     });
@@ -25,23 +23,43 @@ export async function POST(request: Request) {
 
     const hashedPassword = await hashPassword(validatedData.password);
 
-    // Create new user
     const user = await db.user.create({
       data: {
         email: validatedData.email,
         password: hashedPassword,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
         role: validatedData.role,
-        street: validatedData.street,
-        city: validatedData.city,
-        state: validatedData.state,
-        zipcode: validatedData.zipcode,
+        profile: {
+          create: {
+            firstName: validatedData.firstName,
+            lastName: validatedData.lastName,
+            phone: validatedData.phoneNo || "",
+            streetAddress: validatedData.street,
+            city: validatedData.city,
+            state: validatedData.state,
+            postalCode: validatedData.zipcode,
+            dob: validatedData.dob ? new Date(validatedData.dob) : new Date(),
+          },
+        },
+      },
+      include: {
+        profile: true,
       },
     });
 
+    if (!user.profile) {
+      throw new Error("Failed to create user profile");
+    }
+
     return NextResponse.json(
-      { success: true, user: { id: user.id, email: user.email, role: user.role } },
+      {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          name: `${user.profile.firstName} ${user.profile.lastName}`,
+        },
+      },
       { status: 201 },
     );
   } catch (error) {
@@ -51,6 +69,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: error.errors }, { status: 400 });
     }
 
-    return NextResponse.json({ success: false, error: "Registration failed" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Registration failed",
+      },
+      { status: 500 },
+    );
   }
 }

@@ -23,8 +23,12 @@ export async function POST(request: Request) {
         email: true,
         password: true,
         role: true,
-        firstName: true,
-        lastName: true,
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -49,7 +53,8 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email,
         role: user.role,
-        name: `${user.firstName} ${user.lastName}`,
+        name: user.profile ? `${user.profile.firstName} ${user.profile.lastName}` : undefined,
+        profile: user.profile,
       };
 
       cookieStore.set("auth-token", JSON.stringify(sessionData), {

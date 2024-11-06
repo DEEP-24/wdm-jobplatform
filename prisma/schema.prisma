@@ -7,43 +7,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Model
 model User {
-  id                      String    @id @default(uuid()) @map("id")
-  firstName               String    @map("firstName")
-  lastName                String    @map("lastName")
-  password                String
-  email                   String    @unique
-  dob                     DateTime?
-  phoneNo                 String?
-  street                  String?
-  city                    String?
-  state                   String?
-  zipcode                 String?
+  id String @id @default(uuid()) @map("id")
+
+  email    String @unique
+  password String
+
   notificationPreferences String?
   lastPasswordResetAt     DateTime?
   role                    UserRole  @default(USER)
 
+  profile Profile?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 
-// // Profile Model
-// model Profile {
-//   id                 String   @id @default(uuid())
-//   phone              String
-//   streetAddress      String
-//   city               String
-//   state              String
-//   postalCode         String
-//   country            String
-//   dob                DateTime
-//   academicBackground String?
-//   interests          String?
-//   skills             String?
-//   userId             String   @unique
-//   user               User     @relation(fields: [userId], references: [id])
-// }
+model Profile {
+  id                 String   @id @default(uuid())
+  firstName          String   @map("firstName")
+  lastName           String   @map("lastName")
+  phone              String
+  streetAddress      String
+  city               String
+  state              String
+  postalCode         String
+  dob                DateTime
+  academicBackground String?
+  interests          String?
+  skills             String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
 
 // // Follower Model
 // model Follower {

@@ -39,11 +39,20 @@ const poppins = Poppins({
   display: "swap",
 });
 
-type ProfileFormValues = User & {
+type ProfileFormValues = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  dob: string;
   notificationPreferences: string[];
-  notificationMessage: string;
-  password: string;
-  confirmPassword: string;
+  password?: string;
+  confirmPassword?: string;
 };
 
 export default function ProfilePage() {
@@ -56,14 +65,13 @@ export default function ProfilePage() {
       email: "",
       firstName: "",
       lastName: "",
-      dob: "",
-      phoneNo: "",
-      street: "",
+      phone: "",
+      streetAddress: "",
       city: "",
       state: "",
-      zipcode: "",
+      postalCode: "",
+      dob: "",
       notificationPreferences: [],
-      notificationMessage: "",
       password: "",
       confirmPassword: "",
     },
@@ -87,7 +95,7 @@ export default function ProfilePage() {
         setUserData(user);
 
         // Parse notification preferences if it's a string
-        let notificationPrefs = [];
+        let notificationPrefs: string[] = [];
         try {
           notificationPrefs = user.notificationPreferences
             ? JSON.parse(user.notificationPreferences)
@@ -98,15 +106,19 @@ export default function ProfilePage() {
 
         // Format the data for the form
         form.reset({
-          ...user,
+          id: user.id || "",
+          email: user.email || "",
+          firstName: user.profile?.firstName || "",
+          lastName: user.profile?.lastName || "",
+          phone: user.profile?.phone || "",
+          streetAddress: user.profile?.streetAddress || "",
+          city: user.profile?.city || "",
+          state: user.profile?.state || "",
+          postalCode: user.profile?.postalCode || "",
+          dob: user.profile?.dob || "",
           notificationPreferences: notificationPrefs,
-          notificationMessage: "",
-          dob: user.dob || "",
-          phoneNo: user.phoneNo || "",
-          street: user.street || "",
-          city: user.city || "",
-          state: user.state || "",
-          zipcode: user.zipcode || "",
+          password: "",
+          confirmPassword: "",
         });
       } catch (error) {
         console.error("Profile fetch error:", error);
@@ -125,10 +137,7 @@ export default function ProfilePage() {
 
   async function onSubmit(values: ProfileFormValues) {
     try {
-      if (
-        (values.password || values.confirmPassword) &&
-        values.password !== values.confirmPassword
-      ) {
+      if (values.password !== values.confirmPassword) {
         toast({
           title: "Error",
           description: "Passwords do not match",
@@ -138,14 +147,18 @@ export default function ProfilePage() {
       }
 
       const dataToSend = {
-        ...values,
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phone: values.phone,
+        streetAddress: values.streetAddress,
+        city: values.city,
+        state: values.state,
+        postalCode: values.postalCode,
+        dob: values.dob,
         notificationPreferences: JSON.stringify(values.notificationPreferences),
-        password: values.password || undefined,
+        ...(values.password && { password: values.password }),
       };
-
-      // Remove confirmPassword before sending
-      delete (dataToSend as any).confirmPassword;
-      delete (dataToSend as any).notificationMessage;
 
       const response = await fetch("/api/user/profile", {
         method: "PUT",
@@ -159,6 +172,7 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (data.success) {
+        setUserData(data.user); // Update local state with new user data
         toast({
           title: "Success",
           description: "Profile updated successfully",
@@ -196,11 +210,11 @@ export default function ProfilePage() {
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                 <AvatarImage
                   src="/placeholder.svg?height=128&width=128"
-                  alt={`${userData?.firstName} ${userData?.lastName}`}
+                  alt={`${userData?.profile?.firstName || ""} ${userData?.profile?.lastName || ""}`}
                 />
                 <AvatarFallback>
-                  {userData ? (
-                    `${userData.firstName}${userData.lastName}`
+                  {userData?.profile ? (
+                    `${userData.profile.firstName[0]}${userData.profile.lastName[0]}`
                   ) : (
                     <UserCircle className="w-32 h-32" />
                   )}
@@ -208,7 +222,9 @@ export default function ProfilePage() {
               </Avatar>
             </div>
             <CardTitle className="text-4xl font-bold mb-2">
-              {userData ? `${userData.firstName} ${userData.lastName}'s Profile` : "Your Profile"}
+              {userData?.profile
+                ? `${userData.profile.firstName} ${userData.profile.lastName}'s Profile`
+                : "Your Profile"}
             </CardTitle>
             <CardDescription className="text-purple-100 text-lg">{userData?.email}</CardDescription>
           </CardHeader>
@@ -360,7 +376,7 @@ export default function ProfilePage() {
                     />
                     <FormField
                       control={form.control}
-                      name="phoneNo"
+                      name="phone"
                       render={({ field }) => (
                         <FormItem className="flex flex-col w-full">
                           <FormLabel className="text-purple-800 font-semibold">
@@ -389,7 +405,7 @@ export default function ProfilePage() {
                   <h3 className="text-2xl font-semibold text-purple-800">Address Information</h3>
                   <FormField
                     control={form.control}
-                    name="street"
+                    name="streetAddress"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-purple-800 font-semibold">
@@ -453,7 +469,7 @@ export default function ProfilePage() {
                     />
                     <FormField
                       control={form.control}
-                      name="zipcode"
+                      name="postalCode"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-purple-800 font-semibold">Zip Code</FormLabel>
