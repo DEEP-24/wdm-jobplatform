@@ -4,10 +4,14 @@ import { PrismaClient, UserRole, EventType } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.savedJob.deleteMany();
+  await prisma.jobApplication.deleteMany();
+  await prisma.requiredSkill.deleteMany();
+  await prisma.jobListing.deleteMany();
+  await prisma.eventRegistration.deleteMany();
   await prisma.eventSession.deleteMany();
   await prisma.event.deleteMany();
   await prisma.profile.deleteMany();
-  await prisma.eventRegistration.deleteMany();
   await prisma.user.deleteMany();
 
   await prisma.user.create({
@@ -200,6 +204,78 @@ async function main() {
           },
         ],
       },
+    },
+  });
+
+  // Add job listings
+  const employerUser = await prisma.user.findUnique({ where: { email: "employer@example.com" } });
+
+  await prisma.jobListing.create({
+    data: {
+      title: "Senior Software Engineer",
+      company: "Tech Corp",
+      location: "San Francisco, CA",
+      listingType: "Job",
+      jobType: "Full_time",
+      workArrangement: "Hybrid",
+      description:
+        "We are seeking an exceptional Senior Software Engineer to join our innovative development team at Tech Corp. The ideal candidate will play a crucial role in architecting and developing scalable solutions for our enterprise clients. You'll work with cutting-edge technologies in a collaborative environment, participating in code reviews, system design discussions, and technical decision-making processes. We offer competitive benefits, including health insurance, 401(k) matching, unlimited PTO, and professional development opportunities. Our hybrid work environment provides the perfect balance of in-office collaboration and remote flexibility.",
+      requirements: "5+ years experience, React, Node.js",
+      responsibilities: "Lead development projects, mentor junior developers",
+      salaryRange: "$120,000 - $160,000",
+      applicationDeadline: new Date("2024-12-31"),
+      postedBy: employerUser!.id,
+      requiredSkills: {
+        create: [{ skillName: "React" }, { skillName: "Node.js" }, { skillName: "TypeScript" }],
+      },
+    },
+  });
+
+  await prisma.jobListing.create({
+    data: {
+      title: "Summer Software Internship",
+      company: "Tech Corp",
+      location: "Remote",
+      listingType: "Internship",
+      jobType: "Full_time",
+      workArrangement: "Remote",
+      isInternshipPaid: true,
+      description:
+        "Join Tech Corp's dynamic summer internship program, designed to provide hands-on experience in modern software development practices. As an intern, you'll be fully integrated into our development teams, working on real-world projects that impact millions of users. You'll receive mentorship from experienced developers, participate in weekly learning sessions, and gain exposure to full-stack development, agile methodologies, and industry best practices. This program includes regular feedback sessions, networking opportunities with industry professionals, and the possibility of full-time employment upon successful completion. We're committed to fostering an inclusive learning environment where you can grow both technically and professionally.",
+      requirements: "Currently pursuing CS degree, knowledge of JavaScript",
+      responsibilities: "Assist in development projects, learn our tech stack",
+      salaryRange: "$25,000 - $30,000",
+      applicationDeadline: new Date("2024-03-31"),
+      startDate: new Date("2024-06-01"),
+      duration: "3 months",
+      postedBy: employerUser!.id,
+      requiredSkills: {
+        create: [{ skillName: "JavaScript" }, { skillName: "HTML" }, { skillName: "CSS" }],
+      },
+    },
+  });
+
+  // Add a job application
+  const regularUser = await prisma.user.findUnique({ where: { email: "user@example.com" } });
+  const jobListing = await prisma.jobListing.findFirst();
+
+  await prisma.jobApplication.create({
+    data: {
+      jobId: jobListing!.id,
+      applicantId: regularUser!.id,
+      resumeURL: "https://example.com/resume.pdf",
+      coverLetterURL: "https://example.com/cover-letter.pdf",
+      linkedInURL: "https://linkedin.com/in/johndoe",
+      applicationStatus: "Under Review",
+      notes: "Strong candidate with relevant experience",
+    },
+  });
+
+  // Add a saved job
+  await prisma.savedJob.create({
+    data: {
+      userId: regularUser!.id,
+      jobId: jobListing!.id,
     },
   });
 }

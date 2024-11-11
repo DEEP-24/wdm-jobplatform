@@ -21,8 +21,11 @@ model User {
   eventRegistrations EventRegistration[]
   events             Event[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  JobListing     JobListing[]
+  JobApplication JobApplication[]
+  SavedJob       SavedJob[]
 
   @@map("users")
 }
@@ -143,67 +146,74 @@ enum EventType {
 //   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
 // }
 
-// // JobListing Model
-// model JobListing {
-//   id                  String           @id @default(uuid())
-//   title               String
-//   company             String
-//   location            String?
-//   listingType         ListingType
-//   jobType             JobType
-//   workArrangement     WorkArrangement
-//   isInternshipPaid    Boolean?
-//   description         String
-//   requirements        String?
-//   responsibilities    String?
-//   salaryRange         String?
-//   applicationDeadline DateTime?
-//   startDate           DateTime?
-//   duration            String?
-//   postedBy            String
-//   postedAt            DateTime         @default(now())
-//   lastUpdated         DateTime         @updatedAt
-//   status              Status           @default(Open)
-//   user                User             @relation(fields: [postedBy], references: [id])
-//   requiredSkills      RequiredSkill[]
-//   applications        JobApplication[]
-//   savedJobs           SavedJob[]
-// }
+// JobListing Model
+model JobListing {
+  id                  String           @id @default(uuid())
+  title               String
+  company             String
+  location            String?
+  listingType         ListingType
+  jobType             JobType
+  workArrangement     WorkArrangement
+  isInternshipPaid    Boolean?
+  description         String           @db.Text
+  requirements        String?
+  responsibilities    String?
+  salaryRange         String?
+  applicationDeadline DateTime?
+  startDate           DateTime?
+  duration            String?
+  postedBy            String
+  postedAt            DateTime         @default(now())
+  lastUpdated         DateTime         @updatedAt
+  status              Status           @default(Open)
+  user                User             @relation(fields: [postedBy], references: [id])
+  requiredSkills      RequiredSkill[]
+  applications        JobApplication[]
+  savedJobs           SavedJob[]
+}
 
-// // RequiredSkill Model
-// model RequiredSkill {
-//   id        String     @id @default(uuid())
-//   jobId     String
-//   skillName String
-//   job       JobListing @relation(fields: [jobId], references: [id])
-// }
+// RequiredSkill Model
+model RequiredSkill {
+  id        String @id @default(uuid())
+  skillName String
 
-// // JobApplication Model
-// model JobApplication {
-//   id                       String     @id @default(uuid())
-//   jobId                    String
-//   applicantId              String
-//   resumeURL                String?
-//   coverLetterURL           String?
-//   linkedInURL              String?
-//   additionalDocumentsR2URL String?
-//   applicationStatus        String?
-//   submittedAt              DateTime   @default(now())
-//   lastUpdated              DateTime   @updatedAt
-//   notes                    String?
-//   job                      JobListing @relation(fields: [jobId], references: [id])
-//   applicant                User       @relation(fields: [applicantId], references: [id])
-// }
+  job   JobListing @relation(fields: [jobId], references: [id])
+  jobId String
+}
 
-// // SavedJob Model
-// model SavedJob {
-//   id      String     @id @default(uuid())
-//   userId  String
-//   jobId   String
-//   savedAt DateTime   @default(now())
-//   user    User       @relation(fields: [userId], references: [id])
-//   job     JobListing @relation(fields: [jobId], references: [id])
-// }
+// JobApplication Model
+model JobApplication {
+  id                       String   @id @default(uuid())
+  resumeURL                String?
+  coverLetterURL           String?
+  linkedInURL              String?
+  additionalDocumentsR2URL String?
+  applicationStatus        String?
+  submittedAt              DateTime @default(now())
+  lastUpdated              DateTime @updatedAt
+  notes                    String?
+
+  job   JobListing @relation(fields: [jobId], references: [id])
+  jobId String
+
+  applicant   User   @relation(fields: [applicantId], references: [id])
+  applicantId String
+
+  @@map("job_applications")
+}
+
+// SavedJob Model
+model SavedJob {
+  id      String   @id @default(uuid())
+  savedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  job   JobListing @relation(fields: [jobId], references: [id])
+  jobId String
+}
 
 // // Resource Model
 // model Resource {
@@ -276,26 +286,26 @@ enum UserRole {
   USER
 }
 
-// // Enums
-// enum ListingType {
-//   Job
-//   Internship
-// }
+// Enums
+enum ListingType {
+  Job
+  Internship
+}
 
-// enum JobType {
-//   Full_time
-//   Part_time
-//   Contract
-// }
+enum JobType {
+  Full_time
+  Part_time
+  Contract
+}
 
-// enum WorkArrangement {
-//   On_site
-//   Remote
-//   Hybrid
-// }
+enum WorkArrangement {
+  On_site
+  Remote
+  Hybrid
+}
 
-// enum Status {
-//   Open
-//   Closed
-//   Filled
-// }
+enum Status {
+  Open
+  Closed
+  Filled
+}

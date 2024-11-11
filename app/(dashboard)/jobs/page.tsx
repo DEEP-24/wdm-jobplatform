@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useInView } from "react-intersection-observer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -14,28 +14,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Building,
   Briefcase,
-  MapPin,
-  DollarSign,
+  BriefcaseIcon,
+  Building,
+  BuildingIcon,
+  CalendarIcon,
   Clock,
+  DollarSign,
+  DollarSignIcon,
+  MapPin,
+  MapPinIcon,
   Plus,
   Search,
-  CalendarIcon,
-  BuildingIcon,
-  BriefcaseIcon,
-  MapPinIcon,
-  DollarSignIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
 import { Poppins } from "next/font/google";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useInView } from "react-intersection-observer";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -57,13 +57,6 @@ interface Job {
   type: JobType;
 }
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
 interface JobApplication {
   id: string;
   jobId: string;
@@ -76,47 +69,24 @@ interface JobApplication {
   job: Job;
 }
 
-const defaultJobs: Job[] = [
-  {
-    id: "1",
-    title: "Frontend Developer",
-    company: "TechCorp",
-    description: "We are looking for a skilled frontend developer...",
-    fullDescription:
-      "We are looking for a skilled frontend developer with experience in React, TypeScript, and modern CSS frameworks. The ideal candidate will have a strong understanding of web accessibility and performance optimization techniques.",
-    salary: "$80,000 - $120,000",
-    type: "job",
-    workMode: "remote",
-    postedAgo: "2 days ago",
-  },
-  {
-    id: "2",
-    title: "UX Design Intern",
-    company: "DesignHub",
-    description: "Exciting opportunity for a UX Design intern...",
-    fullDescription:
-      "Exciting opportunity for a UX Design intern to work on real-world projects. You'll be part of a dynamic team, learning the latest design tools and methodologies. This internship is perfect for students or recent graduates looking to kickstart their design career.",
-    salary: "$20/hour",
-    type: "internship",
-    workMode: "hybrid",
-    postedAgo: "1 week ago",
-  },
-  // Add more mock jobs as needed
-];
-
-const JOBS_PER_PAGE = 10;
+interface AuthUser {
+  id: string;
+  email: string;
+  role: string;
+  profile?: {
+    firstName: string;
+    lastName: string;
+  };
+}
 
 export default function IntegratedJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>(defaultJobs);
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
-  const [page, setPage] = useState(1);
   const [jobTypeFilter, setJobTypeFilter] = useState<JobType | "all">("all");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<JobApplication[]>([]);
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const { toast } = useToast();
-  const { ref, inView } = useInView();
+  const { ref } = useInView();
 
   const { register, handleSubmit, reset } = useForm();
 
@@ -124,77 +94,98 @@ export default function IntegratedJobsPage() {
   const [isApplicationFormVisible, setIsApplicationFormVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("browse");
 
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
   useEffect(() => {
-    const storedJobs = localStorage.getItem("jobs");
-    if (storedJobs) {
-      setJobs(JSON.parse(storedJobs));
-    }
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch(`/api/jobs?type=${jobTypeFilter}`);
+        const data = await response.json();
+        setDisplayedJobs(data);
+      } catch (_error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch jobs",
+          variant: "destructive",
+        });
+      }
+    };
 
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
+    fetchJobs();
+  }, [jobTypeFilter, toast]);
 
-    const storedAppliedJobs = localStorage.getItem("appliedJobs");
-    if (storedAppliedJobs) {
-      setAppliedJobs(JSON.parse(storedAppliedJobs));
-    }
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const response = await fetch("/api/jobs/applications");
+        const data = await response.json();
+        setAppliedJobs(data);
+      } catch (_error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch applications",
+          variant: "destructive",
+        });
+      }
+    };
 
-    const storedSavedJobs = localStorage.getItem("savedJobs");
-    if (storedSavedJobs) {
-      setSavedJobs(JSON.parse(storedSavedJobs));
-    }
+    fetchApplications();
   }, []);
 
   useEffect(() => {
-    const filteredJobs = jobs.filter(
-      (job) => jobTypeFilter === "all" || job.type === jobTypeFilter,
-    );
-    setDisplayedJobs(filteredJobs.slice(0, page * JOBS_PER_PAGE));
-  }, [jobs, jobTypeFilter, page]);
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch("/api/auth/check");
+        const data = await response.json();
+        if (data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      } catch (error: unknown) {
+        console.error("Error fetching user:", error);
+      }
+    };
 
-  useEffect(() => {
-    if (inView) {
-      setPage((prevPage) => prevPage + 1);
-    }
-  }, [inView]);
+    fetchCurrentUser();
+  }, []);
 
-  const onSubmitApplication = (data: any) => {
+  const onSubmitApplication = async (data: any) => {
     if (selectedJob && currentUser) {
-      const newApplication: JobApplication = {
-        id: Date.now().toString(),
-        jobId: selectedJob.id,
-        userId: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        resume: data.resume,
-        coverLetter: data.coverLetter,
-        submittedAt: new Date().toISOString(),
-        job: {
-          id: selectedJob.id,
-          title: selectedJob.title,
-          company: selectedJob.company,
-          description: selectedJob.description,
-          fullDescription: selectedJob.fullDescription,
-          salary: selectedJob.salary,
-          type: selectedJob.type,
-          workMode: selectedJob.workMode,
-          postedAgo: selectedJob.postedAgo,
-        },
-      };
+      try {
+        const response = await fetch("/api/jobs/applications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jobId: selectedJob.id,
+            resumeURL: data.resume,
+            coverLetterURL: data.coverLetter,
+          }),
+        });
 
-      const updatedAppliedJobs = [...appliedJobs, newApplication];
-      setAppliedJobs(updatedAppliedJobs);
-      localStorage.setItem("appliedJobs", JSON.stringify(updatedAppliedJobs));
+        if (!response.ok) {
+          throw new Error("Failed to submit application");
+        }
 
-      reset();
-      toast({
-        title: "Application Submitted",
-        description: "Your application has been successfully submitted.",
-      });
+        const newApplication = await response.json();
+        setAppliedJobs((prev) => [...prev, newApplication]);
 
-      setIsApplicationFormVisible(false);
-      setIsJobModalOpen(false);
+        reset();
+        toast({
+          title: "Success",
+          description: "Your application has been successfully submitted.",
+        });
+
+        setIsApplicationFormVisible(false);
+        setIsJobModalOpen(false);
+      } catch (error: unknown) {
+        console.error("Error submitting application:", error);
+        toast({
+          title: "Error",
+          description: "Failed to submit application",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -202,7 +193,6 @@ export default function IntegratedJobsPage() {
     if (!savedJobs.some((savedJob) => savedJob.id === job.id)) {
       const updatedSavedJobs = [...savedJobs, job];
       setSavedJobs(updatedSavedJobs);
-      localStorage.setItem("savedJobs", JSON.stringify(updatedSavedJobs));
       toast({
         title: "Job Saved",
         description: "The job has been saved to your profile.",
@@ -248,6 +238,45 @@ export default function IntegratedJobsPage() {
         </Button>
       </CardFooter>
     </Card>
+  );
+
+  const renderApplicationForm = () => (
+    <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4 mt-4">
+      <div>
+        <Label htmlFor="name">Full Name</Label>
+        <Input
+          id="name"
+          defaultValue={
+            currentUser?.profile
+              ? `${currentUser.profile.firstName} ${currentUser.profile.lastName}`
+              : ""
+          }
+          {...register("name")}
+          disabled={!!currentUser?.profile}
+        />
+      </div>
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          defaultValue={currentUser?.email || ""}
+          {...register("email")}
+          disabled={!!currentUser?.email}
+        />
+      </div>
+      <div>
+        <Label htmlFor="resume">Resume Link</Label>
+        <Input id="resume" {...register("resume", { required: true })} />
+      </div>
+      <div>
+        <Label htmlFor="coverLetter">Cover Letter</Label>
+        <Textarea id="coverLetter" {...register("coverLetter", { required: true })} />
+      </div>
+      <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+        Submit Application
+      </Button>
+    </form>
   );
 
   return (
@@ -320,11 +349,11 @@ export default function IntegratedJobsPage() {
                       >
                         <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-t-lg">
                           <CardTitle className="text-lg sm:text-xl font-bold text-purple-800">
-                            {application.job?.title || "Untitled Job"}
+                            {application.job.title}
                           </CardTitle>
                           <p className="text-sm text-gray-600 flex items-center">
                             <BuildingIcon className="w-4 h-4 mr-2" />
-                            {application.job?.company || "Unknown Company"}
+                            {application.job.company}
                           </p>
                         </CardHeader>
                         <CardContent className="p-6">
@@ -342,29 +371,51 @@ export default function IntegratedJobsPage() {
                               <BriefcaseIcon className="w-5 h-5 text-purple-600" />
                               <div>
                                 <p className="text-sm font-medium text-gray-500">Job Type</p>
-                                <p className="text-sm">
-                                  {application.job?.type || "Not specified"}
-                                </p>
+                                <p className="text-sm capitalize">{application.job.type}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <DollarSignIcon className="w-5 h-5 text-purple-600" />
                               <div>
                                 <p className="text-sm font-medium text-gray-500">Salary</p>
-                                <p className="text-sm">
-                                  {application.job?.salary || "Not specified"}
-                                </p>
+                                <p className="text-sm">{application.job.salary}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <MapPinIcon className="w-5 h-5 text-purple-600" />
                               <div>
                                 <p className="text-sm font-medium text-gray-500">Work Mode</p>
-                                <p className="text-sm">
-                                  {application.job?.workMode || "Not specified"}
-                                </p>
+                                <p className="text-sm capitalize">{application.job.workMode}</p>
                               </div>
                             </div>
+                          </div>
+
+                          <div className="mt-6 border-t pt-4">
+                            <h3 className="text-md font-semibold text-purple-800 mb-3">
+                              Application Details
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Resume</p>
+                                <p className="text-sm text-gray-700 line-clamp-2">
+                                  {application.resume}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Cover Letter</p>
+                                <p className="text-sm text-gray-700 line-clamp-2">
+                                  {application.coverLetter}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-500">Applied With</p>
+                                <p className="text-sm text-gray-700">{application.email}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-sm text-gray-700">{application.job.description}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -453,43 +504,7 @@ export default function IntegratedJobsPage() {
                     </div>
                   )}
 
-                  {isApplicationFormVisible && (
-                    <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-4 mt-4">
-                      <div>
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input
-                          id="name"
-                          defaultValue={currentUser?.name || ""}
-                          {...register("name")}
-                          disabled={!!currentUser?.name}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          defaultValue={currentUser?.email || ""}
-                          {...register("email")}
-                          disabled={!!currentUser?.email}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="resume">Resume Link</Label>
-                        <Input id="resume" {...register("resume", { required: true })} />
-                      </div>
-                      <div>
-                        <Label htmlFor="coverLetter">Cover Letter</Label>
-                        <Textarea
-                          id="coverLetter"
-                          {...register("coverLetter", { required: true })}
-                        />
-                      </div>
-                      <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
-                        Submit Application
-                      </Button>
-                    </form>
-                  )}
+                  {isApplicationFormVisible && renderApplicationForm()}
                 </div>
               )}
             </ScrollArea>
