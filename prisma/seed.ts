@@ -144,7 +144,6 @@ async function main() {
       isVirtual: false,
       maxAttendees: 500,
       registrationDeadline: new Date("2024-11-15T23:59:59Z"),
-      status: "UPCOMING",
       userId: organizerUser!.id,
       sessions: {
         create: [
@@ -180,7 +179,6 @@ async function main() {
       isVirtual: false,
       maxAttendees: 300,
       registrationDeadline: new Date("2024-11-22T23:59:59Z"),
-      status: "UPCOMING",
       userId: organizerUser!.id,
       sessions: {
         create: [
