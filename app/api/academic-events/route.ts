@@ -21,7 +21,6 @@ export async function GET() {
       isVirtual: event.isVirtual,
       maxAttendees: event.maxAttendees || 0,
       registrationDeadline: event.registrationDeadline?.toISOString() || "",
-      status: event.status || "Upcoming",
       sessions: event.sessions.map((session) => ({
         id: session.id,
         eventId: session.eventId,

@@ -24,14 +24,12 @@ import { formatDate } from "@/hooks/misc";
 import { useToast } from "@/hooks/use-toast";
 import { getEventTypeLabel } from "@/lib/event-type-labels";
 import { cn } from "@/lib/utils";
-import { EventType } from "@prisma/client";
+import { EventType, UserRole } from "@prisma/client";
 import { format, parseISO } from "date-fns";
 import { Clock, MapPin, Plus } from "lucide-react";
 import { Montserrat, Open_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -79,11 +77,10 @@ export default function AcademicEventsPage() {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [currentUser, setCurrentUser] = React.useState<{
     id: string;
-    role: string;
+    role: UserRole;
   } | null>(null);
   const [selectedEvent, setSelectedEvent] = React.useState<AcademicEvent | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isEditing, setIsEditing] = React.useState(false);
 
   React.useEffect(() => {
     const fetchEvents = async () => {
@@ -107,17 +104,22 @@ export default function AcademicEventsPage() {
 
     const fetchUserAndRegistrations = async () => {
       try {
-        // Fetch current user
-        const userResponse = await fetch("/api/user/profile");
+        // Fetch current user using the auth check endpoint
+        const userResponse = await fetch("/api/auth/check");
         if (userResponse.ok) {
           const userData = await userResponse.json();
-          setCurrentUser(userData);
+          if (userData.authenticated && userData.user) {
+            setCurrentUser({
+              id: userData.user.id,
+              role: userData.user.role, // This will now get the correct role from auth check
+            });
 
-          // Fetch user's registrations
-          const registrationsResponse = await fetch("/api/academic-events/registrations");
-          if (registrationsResponse.ok) {
-            const registrationsData = await registrationsResponse.json();
-            setRegisteredSessions(registrationsData.map((r: any) => r.sessionId));
+            // Fetch user's registrations
+            // const registrationsResponse = await fetch("/api/academic-events/registrations");
+            // if (registrationsResponse.ok) {
+            //   const registrationsData = await registrationsResponse.json();
+            //   setRegisteredSessions(registrationsData.map((r: any) => r.sessionId));
+            // }
           }
         }
       } catch (error) {
@@ -180,10 +182,6 @@ export default function AcademicEventsPage() {
     }
   };
 
-  const handleAddEvent = () => {
-    router.push("/add-academic-event");
-  };
-
   const filteredEvents =
     selectedType === "All" ? events : events.filter((event) => event.eventType === selectedType);
 
@@ -196,45 +194,6 @@ export default function AcademicEventsPage() {
       selectedDate.setHours(0, 0, 0, 0) <= eventEnd.setHours(0, 0, 0, 0)
     );
   });
-
-  const handleUpdateEvent = async (eventId: string, updatedData: Partial<AcademicEvent>) => {
-    try {
-      const response = await fetch("/api/academic-events/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: eventId,
-          ...updatedData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update event");
-      }
-
-      const updatedEvent = await response.json();
-
-      // Update the events list with the updated event
-      setEvents((prevEvents) =>
-        prevEvents.map((event) => (event.id === eventId ? updatedEvent : event)),
-      );
-
-      toast({
-        title: "Event Updated",
-        description: "The event has been successfully updated.",
-      });
-
-      setIsEditing(false);
-    } catch (_error) {
-      toast({
-        title: "Error",
-        description: "Failed to update the event",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -266,9 +225,9 @@ export default function AcademicEventsPage() {
                 ))}
               </SelectContent>
             </Select>
-            {currentUser?.role === "organizer" && (
+            {currentUser?.role === UserRole.ORGANIZER && (
               <Button
-                onClick={handleAddEvent}
+                onClick={() => router.push("/add-event")}
                 className="bg-white text-purple-700 hover:bg-purple-100"
               >
                 <Plus className="mr-2 h-4 w-4" /> Add Event
@@ -315,128 +274,70 @@ export default function AcademicEventsPage() {
                           <div className="flex items-center mb-2">
                             <Clock className="h-4 w-4 mr-2 text-gray-500" />
                             <p className="text-sm">
-                              {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                              {format(new Date(event.startDate), "MMM d, yyyy")} -{" "}
+                              {format(new Date(event.endDate), "MMM d, yyyy")}
                             </p>
                           </div>
                           <div className="flex items-center mb-4">
                             <MapPin className="h-4 w-4 mr-2 text-gray-500" />
                             <p className="text-sm">{event.location}</p>
                           </div>
-                          <Sheet>
-                            <SheetTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                onClick={() => setSelectedEvent(event)}
-                              >
-                                View Details
-                              </Button>
-                            </SheetTrigger>
-                            <SheetContent className="w-full sm:w-[540px] lg:w-[720px] max-w-[90vw]">
-                              <SheetHeader>
-                                <SheetTitle className={`text-2xl ${montserrat.className}`}>
-                                  {selectedEvent?.title}
-                                </SheetTitle>
-                                {currentUser?.role === "ORGANIZER" && (
-                                  <div className="flex justify-end">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => setIsEditing(!isEditing)}
-                                    >
-                                      {isEditing ? "Cancel" : "Edit Event"}
-                                    </Button>
-                                  </div>
-                                )}
-                              </SheetHeader>
-                              <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
-                                <SheetDescription>
-                                  {selectedEvent && (
-                                    <>
-                                      {isEditing ? (
-                                        <form
-                                          onSubmit={(e) => {
-                                            e.preventDefault();
-                                            const formData = new FormData(e.currentTarget);
-                                            const updatedData = {
-                                              title: formData.get("title") as string,
-                                              description: formData.get("description") as string,
-                                              eventType: formData.get("eventType") as EventType,
-                                              startDate: formData.get("startDate") as string,
-                                              endDate: formData.get("endDate") as string,
-                                              location: formData.get("location") as string,
-                                              isVirtual: Boolean(formData.get("isVirtual")),
-                                              maxAttendees: Number(formData.get("maxAttendees")),
-                                              registrationDeadline: formData.get(
-                                                "registrationDeadline",
-                                              ) as string,
-                                              sessions: selectedEvent.sessions.map((session) => ({
-                                                title: formData.get(
-                                                  `sessions.${session.id}.title`,
-                                                ) as string,
-                                                description: formData.get(
-                                                  `sessions.${session.id}.description`,
-                                                ) as string,
-                                                startTime: formData.get(
-                                                  `sessions.${session.id}.startTime`,
-                                                ) as string,
-                                                endTime: formData.get(
-                                                  `sessions.${session.id}.endTime`,
-                                                ) as string,
-                                                location: formData.get(
-                                                  `sessions.${session.id}.location`,
-                                                ) as string,
-                                                maxAttendees: Number(
-                                                  formData.get(
-                                                    `sessions.${session.id}.maxAttendees`,
-                                                  ),
-                                                ),
-                                              })),
-                                            };
-                                            handleUpdateEvent(selectedEvent.id, updatedData);
-                                          }}
-                                          className="space-y-4"
-                                        >
-                                          {/* Add form fields for event details */}
-                                          <div className="space-y-2">
-                                            <Label htmlFor="title">Title</Label>
-                                            <Input
-                                              id="title"
-                                              name="title"
-                                              defaultValue={selectedEvent.title}
-                                            />
-                                          </div>
-                                          {/* Add more form fields for other event properties */}
-
-                                          <Button type="submit" className="w-full">
-                                            Save Changes
-                                          </Button>
-                                        </form>
-                                      ) : (
-                                        <>
-                                          <Badge variant="secondary" className="mb-2">
-                                            {getEventTypeLabel(selectedEvent.eventType)}
-                                          </Badge>
-                                          <p className="text-sm text-gray-600 mb-2">
-                                            {selectedEvent.description}
+                          <div className="space-y-2">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => setSelectedEvent(event)}
+                                >
+                                  View Details
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent className="w-full sm:w-[540px] lg:w-[720px] max-w-[90vw]">
+                                <SheetHeader>
+                                  <SheetTitle className={`text-2xl ${montserrat.className}`}>
+                                    {selectedEvent?.title}
+                                  </SheetTitle>
+                                </SheetHeader>
+                                <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
+                                  <SheetDescription>
+                                    {selectedEvent && (
+                                      <>
+                                        <Badge variant="secondary" className="mb-2">
+                                          {getEventTypeLabel(selectedEvent.eventType)}
+                                        </Badge>
+                                        <p className="text-sm text-gray-600 mb-2">
+                                          {selectedEvent.description}
+                                        </p>
+                                        <div className="flex items-center mb-2">
+                                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                                          <p className="text-sm">
+                                            {format(
+                                              new Date(selectedEvent.startDate),
+                                              "MMM d, yyyy",
+                                            )}{" "}
+                                            -{" "}
+                                            {format(new Date(selectedEvent.endDate), "MMM d, yyyy")}
                                           </p>
-                                          <div className="flex items-center mb-2">
-                                            <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                                            <p className="text-sm">
-                                              {formatDate(selectedEvent.startDate)} -{" "}
-                                              {formatDate(selectedEvent.endDate)}
-                                            </p>
-                                          </div>
-                                          <div className="flex items-center mb-4">
-                                            <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                                            <p className="text-sm">{selectedEvent.location}</p>
-                                          </div>
-                                          <h4
-                                            className={`font-semibold mb-2 text-lg ${montserrat.className}`}
-                                          >
-                                            Sessions:
-                                          </h4>
-                                          {selectedEvent.sessions.map((session) => (
+                                        </div>
+                                        <div className="flex items-center mb-4">
+                                          <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                          <p className="text-sm">{selectedEvent.location}</p>
+                                        </div>
+                                        <h4
+                                          className={`font-semibold mb-2 text-lg ${montserrat.className}`}
+                                        >
+                                          Sessions:
+                                        </h4>
+                                        {/* Sort sessions by title number */}
+                                        {[...selectedEvent.sessions]
+                                          .sort((a, b) => {
+                                            const aNum = Number.parseInt(a.title.split(" ")[1]);
+                                            const bNum = Number.parseInt(b.title.split(" ")[1]);
+                                            return aNum - bNum;
+                                          })
+                                          .map((session) => (
                                             <div
                                               key={session.id}
                                               className="mb-4 p-4 bg-gray-50 rounded-md"
@@ -450,15 +351,18 @@ export default function AcademicEventsPage() {
                                               <div className="flex items-center mb-2">
                                                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
                                                 <p className="text-sm">
-                                                  {formatDate(session.startTime, "time")} -{" "}
-                                                  {formatDate(session.endTime, "time")}
+                                                  {format(
+                                                    new Date(session.startTime),
+                                                    "MMM d, yyyy h:mm a",
+                                                  )}{" "}
+                                                  - {format(new Date(session.endTime), "h:mm a")}
                                                 </p>
                                               </div>
                                               <div className="flex items-center mb-2">
                                                 <MapPin className="h-4 w-4 mr-2 text-gray-500" />
                                                 <p className="text-sm">{session.location}</p>
                                               </div>
-                                              {currentUser?.role === "student" && (
+                                              {currentUser?.role === UserRole.USER && (
                                                 <Button
                                                   className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white"
                                                   onClick={() =>
@@ -473,14 +377,23 @@ export default function AcademicEventsPage() {
                                               )}
                                             </div>
                                           ))}
-                                        </>
-                                      )}
-                                    </>
-                                  )}
-                                </SheetDescription>
-                              </ScrollArea>
-                            </SheetContent>
-                          </Sheet>
+                                      </>
+                                    )}
+                                  </SheetDescription>
+                                </ScrollArea>
+                              </SheetContent>
+                            </Sheet>
+                            {currentUser?.role === UserRole.ORGANIZER && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => router.push(`/edit-event/${event.id}`)}
+                              >
+                                Edit Event
+                              </Button>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
