@@ -7,7 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock, Info, MapPin, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { getEventTypeLabel } from "@/lib/event-type-labels";
+import { format } from "date-fns";
+import type { EventType } from "@prisma/client";
+import { useRouter } from "next/navigation";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -19,48 +22,110 @@ interface Reservation {
   id: string;
   userId: string;
   eventId: string;
-  eventTitle: string;
-  eventDescription: string;
-  eventStartDate: string;
-  eventEndDate: string;
-  eventLocation: string;
-  eventType: string;
   sessionId: string;
-  sessionTitle: string;
-  sessionDescription: string;
-  sessionStartTime: string;
-  sessionEndTime: string;
-  sessionLocation: string;
+  event: {
+    id: string;
+    title: string;
+    description: string;
+    eventType: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+  };
+  session: {
+    id: string;
+    title: string;
+    description: string;
+    startTime: Date;
+    endTime: Date;
+    location: string;
+  };
 }
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (currentUser) {
-      const allReservations: Reservation[] = JSON.parse(
-        localStorage.getItem("academicEventReservations") || "[]",
-      );
-      const userReservations = allReservations.filter((r) => r.userId === currentUser.id);
-      setReservations(userReservations);
-    }
+    fetchReservations();
   }, []);
 
-  const handleCancelReservation = (reservationId: string) => {
-    const updatedReservations = reservations.filter((r) => r.id !== reservationId);
-    setReservations(updatedReservations);
+  const fetchReservations = async () => {
+    try {
+      const response = await fetch("/api/academic-events/registrations");
+      console.log("Fetch response status:", response.status);
 
-    const allReservations: Reservation[] = JSON.parse(localStorage.getItem("reservations") || "[]");
-    const updatedAllReservations = allReservations.filter((r) => r.id !== reservationId);
-    localStorage.setItem("academicEventReservations", JSON.stringify(updatedAllReservations));
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch reservations");
+      }
 
-    toast({
-      title: "Reservation Cancelled",
-      description: "Your reservation has been successfully cancelled.",
-    });
+      const data = await response.json();
+      console.log("Fetched reservations:", data);
+      setReservations(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to load your reservations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleCancelReservation = async (reservationId: string) => {
+    try {
+      console.log("Attempting to cancel reservation:", reservationId);
+
+      if (!reservationId) {
+        throw new Error("Invalid reservation ID");
+      }
+
+      const url = new URL(`/api/academic-events/register/${reservationId}`, window.location.origin);
+      console.log("Request URL:", url.toString());
+
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Cancel response status:", response.status);
+
+      const data = await response.json();
+      console.log("Cancel response data:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to cancel reservation");
+      }
+
+      setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+      toast({
+        title: "Success",
+        description: "Your reservation has been cancelled successfully",
+      });
+    } catch (error) {
+      console.error("Cancel reservation error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to cancel the reservation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -75,7 +140,10 @@ export default function ReservationsPage() {
             {reservations.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-xl text-gray-600 mb-4">You don't have any reservations yet.</p>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={() => router.push("/academic-events")}
+                >
                   Browse Events
                 </Button>
               </div>
@@ -87,42 +155,48 @@ export default function ReservationsPage() {
                     className="flex flex-col bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden"
                   >
                     <CardHeader className="bg-purple-600 text-white p-4">
-                      <CardTitle className="text-xl font-semibold flex items-center justify-between">
-                        <span className="truncate">{reservation.eventTitle}</span>
-                        <Badge variant="secondary" className="ml-2 bg-white text-purple-600">
-                          {reservation.eventType}
+                      <div className="flex flex-col gap-2">
+                        <CardTitle className="text-xl font-semibold break-words">
+                          {reservation.event.title}
+                        </CardTitle>
+                        <Badge variant="secondary" className="w-fit bg-white text-purple-600">
+                          {getEventTypeLabel(reservation.event.eventType as EventType)}
                         </Badge>
-                      </CardTitle>
+                      </div>
                     </CardHeader>
-                    <CardContent className="flex-grow p-4 space-y-4">
-                      <ScrollArea className="h-40">
+                    <CardContent className="flex-grow p-4">
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="text-lg font-medium mb-2 text-purple-800">
-                            {reservation.sessionTitle}
+                          <h3 className="text-lg font-medium text-purple-800 mb-2">
+                            {reservation.session.title}
                           </h3>
-                          <p className="text-sm text-gray-600">{reservation.sessionDescription}</p>
+                          <p className="text-sm text-gray-600">{reservation.session.description}</p>
                         </div>
-                        <div className="space-y-2 text-sm text-gray-600 mt-4">
+                        <div className="space-y-3 text-sm text-gray-600">
                           <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-2 text-purple-600" />
-                            {new Date(reservation.eventStartDate).toLocaleDateString()} -{" "}
-                            {new Date(reservation.eventEndDate).toLocaleDateString()}
+                            <Calendar className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" />
+                            <span>
+                              {format(new Date(reservation.event.startDate), "MMM d, yyyy")} -{" "}
+                              {format(new Date(reservation.event.endDate), "MMM d, yyyy")}
+                            </span>
                           </div>
                           <div className="flex items-center">
-                            <Clock className="w-4 h-4 mr-2 text-purple-600" />
-                            {new Date(reservation.sessionStartTime).toLocaleTimeString()} -{" "}
-                            {new Date(reservation.sessionEndTime).toLocaleTimeString()}
+                            <Clock className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" />
+                            <span>
+                              {format(new Date(reservation.session.startTime), "h:mm a")} -{" "}
+                              {format(new Date(reservation.session.endTime), "h:mm a")}
+                            </span>
                           </div>
                           <div className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-2 text-purple-600" />
-                            {reservation.sessionLocation}
+                            <MapPin className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" />
+                            <span className="break-words">{reservation.session.location}</span>
                           </div>
                           <div className="flex items-start">
-                            <Info className="w-4 h-4 mr-2 text-purple-600 mt-1" />
-                            <span>Event: {reservation.eventDescription}</span>
+                            <Info className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0 mt-1" />
+                            <span className="break-words">{reservation.event.description}</span>
                           </div>
                         </div>
-                      </ScrollArea>
+                      </div>
                     </CardContent>
                     <CardContent className="p-4 bg-gray-50">
                       <Button

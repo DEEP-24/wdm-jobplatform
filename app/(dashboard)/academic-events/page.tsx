@@ -104,22 +104,20 @@ export default function AcademicEventsPage() {
 
     const fetchUserAndRegistrations = async () => {
       try {
-        // Fetch current user using the auth check endpoint
         const userResponse = await fetch("/api/auth/check");
         if (userResponse.ok) {
           const userData = await userResponse.json();
           if (userData.authenticated && userData.user) {
             setCurrentUser({
               id: userData.user.id,
-              role: userData.user.role, // This will now get the correct role from auth check
+              role: userData.user.role,
             });
 
-            // Fetch user's registrations
-            // const registrationsResponse = await fetch("/api/academic-events/registrations");
-            // if (registrationsResponse.ok) {
-            //   const registrationsData = await registrationsResponse.json();
-            //   setRegisteredSessions(registrationsData.map((r: any) => r.sessionId));
-            // }
+            const registrationsResponse = await fetch("/api/academic-events/registrations");
+            if (registrationsResponse.ok) {
+              const registrationsData = await registrationsResponse.json();
+              setRegisteredSessions(registrationsData.map((r: any) => r.sessionId));
+            }
           }
         }
       } catch (error) {
@@ -163,20 +161,19 @@ export default function AcademicEventsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Registration failed");
+        const error = await response.text();
+        throw new Error(error);
       }
 
       setRegisteredSessions((prev) => [...prev, sessionId]);
       toast({
-        title: "Registration Successful",
-        description: "You have been registered for the session",
+        title: "Success",
+        description: "Successfully registered for the session",
       });
-
-      router.push("/reservations");
-    } catch (_error) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to register for the session",
+        description: error instanceof Error ? error.message : "Failed to register for the session",
         variant: "destructive",
       });
     }
