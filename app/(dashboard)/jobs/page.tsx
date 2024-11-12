@@ -77,6 +77,7 @@ interface Job {
   duration: string | null;
   isInternshipPaid: boolean | null;
   requiredSkills: Array<string | { id: string; skillName: string; jobId: string }>;
+  status: "Open" | "Closed" | "Filled";
 }
 
 interface JobApplication {
@@ -294,17 +295,25 @@ export default function IntegratedJobsPage() {
     >
       <CardContent className="p-6">
         <div className="space-y-4">
-          {/* Title and Company */}
-          <div>
-            <h2 className="text-xl font-semibold text-purple-800 mb-2">{job.title}</h2>
-            <p className="text-sm text-gray-600 flex items-center mb-2">
-              <Building className="mr-2 h-4 w-4" /> {job.company}
-            </p>
-            {job.workMode === "onsite" && job.location && (
+          {/* Title, Company and Status */}
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-semibold text-purple-800 mb-2">{job.title}</h2>
               <p className="text-sm text-gray-600 flex items-center mb-2">
-                <MapPin className="mr-2 h-4 w-4" /> {job.location}
+                <Building className="mr-2 h-4 w-4" /> {job.company}
               </p>
-            )}
+            </div>
+            <Badge
+              variant={
+                job.status === "Open"
+                  ? "default"
+                  : job.status === "Filled"
+                    ? "destructive"
+                    : "secondary"
+              }
+            >
+              {job.status}
+            </Badge>
           </div>
 
           {/* Description */}
@@ -822,23 +831,45 @@ export default function IntegratedJobsPage() {
 
                   {/* Actions */}
                   {!isApplicationFormVisible && (
-                    <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        onClick={() => saveJob(selectedJob)}
-                        disabled={savedJobs.some((job) => job.id === selectedJob.id)}
+                    <div className="flex justify-between items-center space-x-2 mt-6 pt-4 border-t">
+                      <Badge
+                        variant={
+                          selectedJob.status === "Open"
+                            ? "default"
+                            : selectedJob.status === "Filled"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className="text-sm"
                       >
-                        {savedJobs.some((job) => job.id === selectedJob.id) ? "Saved" : "Save Job"}
-                      </Button>
-                      <Button
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                        onClick={() => setIsApplicationFormVisible(true)}
-                        disabled={appliedJobs.some((app) => app.jobId === selectedJob.id)}
-                      >
-                        {appliedJobs.some((app) => app.jobId === selectedJob.id)
-                          ? "Applied"
-                          : "Apply Now"}
-                      </Button>
+                        {selectedJob.status}
+                      </Badge>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => saveJob(selectedJob)}
+                          disabled={savedJobs.some((job) => job.id === selectedJob.id)}
+                        >
+                          {savedJobs.some((job) => job.id === selectedJob.id)
+                            ? "Saved"
+                            : "Save Job"}
+                        </Button>
+                        <Button
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                          onClick={() => setIsApplicationFormVisible(true)}
+                          disabled={
+                            selectedJob.status === "Filled" ||
+                            selectedJob.status === "Closed" ||
+                            appliedJobs.some((app) => app.jobId === selectedJob.id)
+                          }
+                        >
+                          {selectedJob.status !== "Open"
+                            ? selectedJob.status
+                            : appliedJobs.some((app) => app.jobId === selectedJob.id)
+                              ? "Applied"
+                              : "Apply Now"}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -862,9 +893,22 @@ export default function IntegratedJobsPage() {
                 <div className="space-y-6">
                   {/* Company and Location */}
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Building className="h-4 w-4 text-gray-500" />
-                      <p className="text-sm font-medium">{selectedAppliedJob.company}</p>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center space-x-2">
+                        <Building className="h-4 w-4 text-gray-500" />
+                        <p className="text-sm font-medium">{selectedAppliedJob.company}</p>
+                      </div>
+                      <Badge
+                        variant={
+                          selectedAppliedJob.status === "Open"
+                            ? "default"
+                            : selectedAppliedJob.status === "Filled"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {selectedAppliedJob.status}
+                      </Badge>
                     </div>
                     {selectedAppliedJob.workMode === "onsite" && selectedAppliedJob.location && (
                       <div className="flex items-center space-x-2">

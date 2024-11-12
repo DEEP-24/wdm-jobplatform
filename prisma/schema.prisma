@@ -29,6 +29,14 @@ model User {
 
   followers Follower[] @relation("UserFollowers")
   following Follower[] @relation("UserFollowing")
+  resources Resource[]
+
+  MentorProfile MentorProfile?
+  MenteeProfile MenteeProfile?
+
+  mentorshipPrograms MentorshipProgram[]
+  mentorSessions     MentorshipSession[] @relation("MentorSessions")
+  menteeSessions     MentorshipSession[] @relation("MenteeSessions")
 
   @@map("users")
 }
@@ -219,68 +227,69 @@ model SavedJob {
   jobId String
 }
 
-// // Resource Model
-// model Resource {
-//   id          String   @id @default(uuid())
-//   title       String
-//   description String?
-//   type        String?
-//   url         String
-//   tags        String?
-//   createdAt   DateTime @default(now())
-//   uploadedBy  String
-//   user        User     @relation(fields: [uploadedBy], references: [id])
-// }
+// Resource Model
+model Resource {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  type        String?
+  url         String
+  tags        String?
+  createdAt   DateTime @default(now())
+  uploadedBy  String
 
-// // MentorProfile Model
-// model MentorProfile {
-//   id                String  @id @default(uuid())
-//   userId            String  @unique
-//   expertise         String?
-//   yearsOfExperience Int?
-//   maxMentees        Int?
-//   user              User    @relation(fields: [userId], references: [id])
-// }
+  user User @relation(fields: [uploadedBy], references: [id])
+}
 
-// // MenteeProfile Model
-// model MenteeProfile {
-//   id                     String    @id @default(uuid())
-//   userId                 String    @unique
-//   academicLevel          String?
-//   fieldOfStudy           String?
-//   careerGoals            String?
-//   areasOfInterest        String?
-//   expectedGraduationDate DateTime?
-//   user                   User      @relation(fields: [userId], references: [id])
-// }
+// MentorProfile Model
+model MentorProfile {
+  id                String  @id @default(uuid())
+  userId            String  @unique
+  expertise         String?
+  yearsOfExperience Int?
+  maxMentees        Int?
+  user              User    @relation(fields: [userId], references: [id])
+}
 
-// // MentorshipProgram Model
-// model MentorshipProgram {
-//   id              String    @id @default(uuid())
-//   name            String
-//   description     String?
-//   startDate       DateTime?
-//   endDate         DateTime?
-//   programType     String?
-//   maxParticipants Int?
-//   status          String?
-//   createdBy       String
-//   createdAt       DateTime  @default(now())
-//   user            User      @relation(fields: [createdBy], references: [id])
-// }
+// MenteeProfile Model
+model MenteeProfile {
+  id                     String    @id @default(uuid())
+  userId                 String    @unique
+  academicLevel          String?
+  fieldOfStudy           String?
+  careerGoals            String?
+  areasOfInterest        String?
+  expectedGraduationDate DateTime?
+  user                   User      @relation(fields: [userId], references: [id])
+}
 
-// // MentorshipSession Model
-// model MentorshipSession {
-//   id          String    @id @default(uuid())
-//   mentorId    String
-//   menteeId    String
-//   sessionDate DateTime?
-//   startTime   DateTime?
-//   endTime     DateTime?
-//   sessionType String?
-//   mentor      User      @relation("MentorSessions", fields: [mentorId], references: [id])
-//   mentee      User      @relation("MenteeSessions", fields: [menteeId], references: [id])
-// }
+// MentorshipProgram Model
+model MentorshipProgram {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  startDate       DateTime?
+  endDate         DateTime?
+  programType     String?
+  maxParticipants Int?
+  status          String?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  user            User      @relation(fields: [createdBy], references: [id])
+}
+
+// MentorshipSession Model
+model MentorshipSession {
+  id          String    @id @default(uuid())
+  mentorId    String
+  menteeId    String
+  sessionDate DateTime?
+  startTime   DateTime?
+  endTime     DateTime?
+  sessionType String?
+  mentor      User      @relation("MentorSessions", fields: [mentorId], references: [id])
+  mentee      User      @relation("MenteeSessions", fields: [menteeId], references: [id])
+}
 
 enum UserRole {
   ADMIN

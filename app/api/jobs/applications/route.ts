@@ -7,40 +7,32 @@ export async function GET() {
     const cookieStore = cookies();
     const authToken = cookieStore.get("auth-token");
 
-    console.log("Auth token:", authToken?.value);
-
     if (!authToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const tokenData = JSON.parse(authToken.value);
-    console.log("Token data:", tokenData);
+    const user = await db.user.findUnique({
+      where: {
+        email: tokenData.email,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-    // Get applications based on whether the user is an applicant or employer
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 });
+    }
+
     const applications = await db.jobApplication.findMany({
       where: {
-        applicantId: tokenData.id, // Find applications where the current user is the applicant
+        applicantId: user.id,
       },
       include: {
         job: {
-          select: {
-            id: true,
-            title: true,
-            company: true,
-            description: true,
-            requirements: true,
-            responsibilities: true,
-            salaryRange: true,
-            location: true,
-            listingType: true,
-            workArrangement: true,
-            jobType: true,
-            applicationDeadline: true,
-            startDate: true,
-            duration: true,
-            isInternshipPaid: true,
+          include: {
             requiredSkills: true,
-            postedAt: true,
           },
         },
       },
@@ -49,15 +41,14 @@ export async function GET() {
       },
     });
 
-    // Transform the data to match the expected format
-    const transformedApplications = applications.map((app) => ({
+    const formattedApplications = applications.map((app) => ({
       id: app.id,
       jobId: app.jobId,
       userId: app.applicantId,
-      resumeURL: app.resumeURL || "",
-      coverLetterURL: app.coverLetterURL || "",
+      resumeURL: app.resumeURL,
+      coverLetterURL: app.coverLetterURL,
       submittedAt: app.submittedAt.toISOString(),
-      applicationStatus: app.applicationStatus || "Under Review",
+      applicationStatus: app.applicationStatus,
       job: {
         id: app.job.id,
         title: app.job.title,
@@ -65,27 +56,25 @@ export async function GET() {
         description: app.job.description,
         requirements: app.job.requirements,
         responsibilities: app.job.responsibilities,
-        salary: app.job.salaryRange || "Not specified",
+        salary: app.job.salaryRange,
         location: app.job.location,
         postedAgo: app.job.postedAt.toISOString(),
-        workMode: app.job.workArrangement.toLowerCase() as "onsite" | "remote" | "hybrid",
-        type: app.job.listingType.toLowerCase() as "job" | "internship",
-        jobType: app.job.jobType as "Full_time" | "Part_time" | "Contract",
+        workMode: app.job.workArrangement.toLowerCase(),
+        type: app.job.listingType.toLowerCase(),
+        jobType: app.job.jobType,
         applicationDeadline: app.job.applicationDeadline?.toISOString() || null,
         startDate: app.job.startDate?.toISOString() || null,
-        duration: app.job.duration || null,
-        isInternshipPaid: app.job.isInternshipPaid || null,
-        requiredSkills: app.job.requiredSkills || [],
+        duration: app.job.duration,
+        isInternshipPaid: app.job.isInternshipPaid,
+        requiredSkills: app.job.requiredSkills,
+        status: app.job.status,
       },
     }));
 
-    console.log("Raw applications:", applications);
-    console.log("Transformed applications:", transformedApplications);
-
-    return NextResponse.json(transformedApplications);
+    return NextResponse.json(formattedApplications);
   } catch (error) {
-    console.error("Error fetching applications:", error);
-    return NextResponse.json({ error: "Failed to fetch applications" }, { status: 500 });
+    console.error("[APPLICATIONS_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 
