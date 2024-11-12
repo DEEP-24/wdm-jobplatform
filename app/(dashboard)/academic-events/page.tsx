@@ -26,10 +26,21 @@ import { getEventTypeLabel } from "@/lib/event-type-labels";
 import { cn } from "@/lib/utils";
 import { EventType, UserRole } from "@prisma/client";
 import { format, parseISO } from "date-fns";
-import { Clock, MapPin, Plus } from "lucide-react";
+import { Clock, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 import { Montserrat, Open_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -81,6 +92,8 @@ export default function AcademicEventsPage() {
   } | null>(null);
   const [selectedEvent, setSelectedEvent] = React.useState<AcademicEvent | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<AcademicEvent | null>(null);
 
   React.useEffect(() => {
     const fetchEvents = async () => {
@@ -191,6 +204,35 @@ export default function AcademicEventsPage() {
       selectedDate.setHours(0, 0, 0, 0) <= eventEnd.setHours(0, 0, 0, 0)
     );
   });
+
+  const handleDelete = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/academic-events/${eventId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete event");
+      }
+
+      setEvents((prev) => prev.filter((event) => event.id !== eventId));
+
+      toast({
+        title: "Success",
+        description: "Event has been successfully deleted.",
+      });
+
+      setIsDeleteDialogOpen(false);
+      setEventToDelete(null);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -381,14 +423,29 @@ export default function AcademicEventsPage() {
                               </SheetContent>
                             </Sheet>
                             {currentUser?.role === UserRole.ORGANIZER && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                onClick={() => router.push(`/edit-event/${event.id}`)}
-                              >
-                                Edit Event
-                              </Button>
+                              <div className="flex gap-2 mt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => router.push(`/edit-event/${event.id}`)}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setEventToDelete(event);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </CardContent>
@@ -403,6 +460,26 @@ export default function AcademicEventsPage() {
           </Card>
         </div>
       </div>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event "
+              {eventToDelete?.title}" and all associated sessions.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setEventToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => eventToDelete && handleDelete(eventToDelete.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
