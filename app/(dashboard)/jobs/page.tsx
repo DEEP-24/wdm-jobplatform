@@ -50,11 +50,19 @@ interface Job {
   title: string;
   company: string;
   description: string;
-  fullDescription: string;
+  requirements: string;
+  responsibilities: string;
   salary: string;
+  location: string | null;
   postedAgo: string;
   workMode: "onsite" | "remote" | "hybrid";
   type: JobType;
+  jobType: "Full_time" | "Part_time" | "Contract";
+  applicationDeadline: string | null;
+  startDate: string | null;
+  duration: string | null;
+  isInternshipPaid: boolean | null;
+  requiredSkills: string[];
 }
 
 interface JobApplication {
@@ -206,25 +214,81 @@ export default function IntegratedJobsPage() {
       className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300"
     >
       <CardContent className="p-6">
-        <h2 className="text-xl font-semibold text-purple-800 mb-2">{job.title}</h2>
-        <p className="text-sm text-gray-600 flex items-center mb-4">
-          <Building className="mr-2 h-4 w-4" /> {job.company}
-        </p>
-        <p className="text-sm text-gray-700 mb-4 line-clamp-3">{job.description}</p>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="outline" className="flex items-center">
-            <DollarSign className="mr-1 h-3 w-3" /> {job.salary}
-          </Badge>
-          <Badge variant="outline" className="flex items-center">
-            <Briefcase className="mr-1 h-3 w-3" /> {job.type}
-          </Badge>
-          <Badge variant="outline" className="flex items-center">
-            <MapPin className="mr-1 h-3 w-3" /> {job.workMode}
-          </Badge>
+        <div className="space-y-4">
+          {/* Title and Company */}
+          <div>
+            <h2 className="text-xl font-semibold text-purple-800 mb-2">{job.title}</h2>
+            <p className="text-sm text-gray-600 flex items-center mb-2">
+              <Building className="mr-2 h-4 w-4" /> {job.company}
+            </p>
+            {job.workMode === "onsite" && job.location && (
+              <p className="text-sm text-gray-600 flex items-center mb-2">
+                <MapPin className="mr-2 h-4 w-4" /> {job.location}
+              </p>
+            )}
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-gray-700 line-clamp-3">{job.description}</p>
+
+          {/* Primary Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="flex items-center">
+              <DollarSign className="mr-1 h-3 w-3" /> {job.salary}
+            </Badge>
+            <Badge variant="outline" className="flex items-center">
+              <Briefcase className="mr-1 h-3 w-3" /> {job.jobType.replace("_", " ")}
+            </Badge>
+            <Badge variant="outline" className="flex items-center">
+              <MapPin className="mr-1 h-3 w-3" /> {job.workMode}
+            </Badge>
+          </div>
+
+          {/* Skills */}
+          {job.requiredSkills && job.requiredSkills.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {job.requiredSkills.slice(0, 3).map((skill, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {skill}
+                </Badge>
+              ))}
+              {job.requiredSkills.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{job.requiredSkills.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Additional Info */}
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+            {job.applicationDeadline && (
+              <div className="flex items-center">
+                <CalendarIcon className="mr-1 h-3 w-3" />
+                <span>Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
+              </div>
+            )}
+            {job.type === "internship" && (
+              <>
+                {job.duration && (
+                  <div className="flex items-center">
+                    <Clock className="mr-1 h-3 w-3" />
+                    <span>Duration: {job.duration}</span>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <DollarSign className="mr-1 h-3 w-3" />
+                  <span>{job.isInternshipPaid ? "Paid" : "Unpaid"} Internship</span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center">
+              <Clock className="mr-1 h-3 w-3" />
+              <span>Posted {job.postedAgo}</span>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 flex items-center">
-          <Clock className="mr-1 h-3 w-3" /> {job.postedAgo}
-        </p>
       </CardContent>
       <CardFooter className="bg-gray-50 p-4">
         <Button
@@ -371,7 +435,9 @@ export default function IntegratedJobsPage() {
                               <BriefcaseIcon className="w-5 h-5 text-purple-600" />
                               <div>
                                 <p className="text-sm font-medium text-gray-500">Job Type</p>
-                                <p className="text-sm capitalize">{application.job.type}</p>
+                                <p className="text-sm capitalize">
+                                  {application.job.jobType.replace("_", " ")}
+                                </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -381,41 +447,80 @@ export default function IntegratedJobsPage() {
                                 <p className="text-sm">{application.job.salary}</p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <MapPinIcon className="w-5 h-5 text-purple-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Work Mode</p>
-                                <p className="text-sm capitalize">{application.job.workMode}</p>
+                            {application.job.workMode === "onsite" && application.job.location && (
+                              <div className="flex items-center space-x-2">
+                                <MapPinIcon className="w-5 h-5 text-purple-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Location</p>
+                                  <p className="text-sm">{application.job.location}</p>
+                                </div>
                               </div>
-                            </div>
+                            )}
+                            {application.job.applicationDeadline && (
+                              <div className="flex items-center space-x-2">
+                                <CalendarIcon className="w-5 h-5 text-purple-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">
+                                    Application Deadline
+                                  </p>
+                                  <p className="text-sm">
+                                    {new Date(
+                                      application.job.applicationDeadline,
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {application.job.startDate && (
+                              <div className="flex items-center space-x-2">
+                                <CalendarIcon className="w-5 h-5 text-purple-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Start Date</p>
+                                  <p className="text-sm">
+                                    {new Date(application.job.startDate).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          <div className="mt-6 border-t pt-4">
-                            <h3 className="text-md font-semibold text-purple-800 mb-3">
-                              Application Details
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="mt-6 space-y-4">
+                            {application.job.requirements && (
                               <div>
-                                <p className="text-sm font-medium text-gray-500">Resume</p>
-                                <p className="text-sm text-gray-700 line-clamp-2">
-                                  {application.resume}
+                                <h3 className="text-sm font-semibold text-purple-800">
+                                  Requirements
+                                </h3>
+                                <p className="text-sm text-gray-700">
+                                  {application.job.requirements}
                                 </p>
                               </div>
+                            )}
+                            {application.job.responsibilities && (
                               <div>
-                                <p className="text-sm font-medium text-gray-500">Cover Letter</p>
-                                <p className="text-sm text-gray-700 line-clamp-2">
-                                  {application.coverLetter}
+                                <h3 className="text-sm font-semibold text-purple-800">
+                                  Responsibilities
+                                </h3>
+                                <p className="text-sm text-gray-700">
+                                  {application.job.responsibilities}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Applied With</p>
-                                <p className="text-sm text-gray-700">{application.email}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4">
-                            <p className="text-sm text-gray-700">{application.job.description}</p>
+                            )}
+                            {application.job.requiredSkills &&
+                              application.job.requiredSkills.length > 0 && (
+                                <div>
+                                  <h3 className="text-sm font-semibold text-purple-800">
+                                    Required Skills
+                                  </h3>
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {application.job.requiredSkills.map((skill, index) => (
+                                      // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                      <Badge key={index} variant="secondary">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                           </div>
                         </CardContent>
                       </Card>
@@ -459,14 +564,30 @@ export default function IntegratedJobsPage() {
         </Tabs>
 
         <Dialog open={isJobModalOpen} onOpenChange={setIsJobModalOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
-              <DialogTitle>{selectedJob?.title}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-purple-800">
+                {selectedJob?.title}
+              </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
+            <ScrollArea className="max-h-[70vh] pr-4">
               {selectedJob && (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600">{selectedJob.company}</p>
+                <div className="space-y-6">
+                  {/* Company and Location */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Building className="h-4 w-4 text-gray-500" />
+                      <p className="text-sm font-medium">{selectedJob.company}</p>
+                    </div>
+                    {selectedJob.workMode === "onsite" && selectedJob.location && (
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <p className="text-sm">{selectedJob.location}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Job Details Badges */}
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="flex items-center">
                       <DollarSign className="mr-1 h-3 w-3" /> {selectedJob.salary}
@@ -475,16 +596,93 @@ export default function IntegratedJobsPage() {
                       <Briefcase className="mr-1 h-3 w-3" /> {selectedJob.type}
                     </Badge>
                     <Badge variant="outline" className="flex items-center">
-                      <MapPin className="mr-1 h-3 w-3" /> {selectedJob.workMode}
+                      <Clock className="mr-1 h-3 w-3" /> {selectedJob.jobType.replace("_", " ")}
                     </Badge>
                     <Badge variant="outline" className="flex items-center">
-                      <Clock className="mr-1 h-3 w-3" /> {selectedJob.postedAgo}
+                      <MapPin className="mr-1 h-3 w-3" /> {selectedJob.workMode}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-700">{selectedJob.fullDescription}</p>
 
+                  {/* Important Dates and Duration */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-600">Posted</h3>
+                      <p className="text-sm">{selectedJob.postedAgo}</p>
+                    </div>
+                    {selectedJob.applicationDeadline && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">
+                          Application Deadline
+                        </h3>
+                        <p className="text-sm">
+                          {new Date(selectedJob.applicationDeadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {selectedJob.startDate && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">Start Date</h3>
+                        <p className="text-sm">
+                          {new Date(selectedJob.startDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {selectedJob.duration && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">Duration</h3>
+                        <p className="text-sm">{selectedJob.duration}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Job Content */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-purple-800">Description</h3>
+                      <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                        {selectedJob.description}
+                      </p>
+                    </div>
+
+                    {selectedJob.responsibilities && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-purple-800">Responsibilities</h3>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                          {selectedJob.responsibilities}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedJob.requirements && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-purple-800">Requirements</h3>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                          {selectedJob.requirements}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Required Skills */}
+                  {selectedJob.requiredSkills && selectedJob.requiredSkills.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-purple-800 mb-2">
+                        Required Skills
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedJob.requiredSkills.map((skill, index) => (
+                          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                          <Badge key={index} variant="secondary">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
                   {!isApplicationFormVisible && (
-                    <div className="flex justify-end space-x-2 mt-4">
+                    <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
                       <Button
                         variant="outline"
                         onClick={() => saveJob(selectedJob)}
@@ -504,6 +702,7 @@ export default function IntegratedJobsPage() {
                     </div>
                   )}
 
+                  {/* Application Form */}
                   {isApplicationFormVisible && renderApplicationForm()}
                 </div>
               )}
