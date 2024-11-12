@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 interface MentorFormData {
-  name: string;
   title: string;
   company: string;
+  city: string;
+  state: string;
+  academicBackground: string;
+  skills: string;
   expertise: string;
-  bio: string;
-  imageUrl: string;
   yearsOfExperience: number;
   maxMentees: number;
 }
@@ -25,12 +26,13 @@ export default function BecomeAMentorPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<MentorFormData>({
-    name: "",
     title: "",
     company: "",
+    city: "",
+    state: "",
+    academicBackground: "",
+    skills: "",
     expertise: "",
-    bio: "",
-    imageUrl: "",
     yearsOfExperience: 0,
     maxMentees: 5,
   });
@@ -45,19 +47,12 @@ export default function BecomeAMentorPage() {
         return;
       }
 
-      const user = data.user;
-      if (user.profile) {
-        setFormData((prev) => ({
-          ...prev,
-          name: `${user.profile.firstName} ${user.profile.lastName}`,
-        }));
-      }
-
-      if (user.role === "MENTOR") {
+      if (data.user.role === "MENTOR") {
         toast({
           title: "Already a Mentor",
           description: "You are already registered as a mentor.",
         });
+        router.push("/mentors");
       }
     };
 
@@ -83,7 +78,13 @@ export default function BecomeAMentorPage() {
         },
         body: JSON.stringify({
           ...formData,
+          yearsOfExperience: Number.parseInt(formData.yearsOfExperience.toString()),
+          maxMentees: Number.parseInt(formData.maxMentees.toString()),
           expertise: formData.expertise
+            .split(",")
+            .map((skill) => skill.trim())
+            .join(","),
+          skills: formData.skills
             .split(",")
             .map((skill) => skill.trim())
             .join(","),
@@ -120,21 +121,6 @@ export default function BecomeAMentorPage() {
         <CardContent className="pt-6">
           <form onSubmit={onSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-gray-700">
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                disabled
-                className="mt-1 bg-gray-100"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="title" className="text-gray-700">
                 Professional Title
               </Label>
@@ -145,6 +131,7 @@ export default function BecomeAMentorPage() {
                 onChange={handleInputChange}
                 required
                 className="mt-1"
+                placeholder="e.g., Senior Software Engineer"
               />
             </div>
 
@@ -159,6 +146,51 @@ export default function BecomeAMentorPage() {
                 onChange={handleInputChange}
                 required
                 className="mt-1"
+                placeholder="e.g., Tech Corp"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city" className="text-gray-700">
+                  City
+                </Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state" className="text-gray-700">
+                  State
+                </Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="academicBackground" className="text-gray-700">
+                Academic Background
+              </Label>
+              <Textarea
+                id="academicBackground"
+                name="academicBackground"
+                value={formData.academicBackground}
+                onChange={handleInputChange}
+                required
+                className="mt-1"
+                placeholder="e.g., Bachelor's in Computer Science, Master's in Software Engineering"
               />
             </div>
 
@@ -171,41 +203,59 @@ export default function BecomeAMentorPage() {
                 name="expertise"
                 value={formData.expertise}
                 onChange={handleInputChange}
-                placeholder="React, Node.js, Cloud Architecture"
+                placeholder="e.g., Web Development, Cloud Architecture, Machine Learning"
                 required
                 className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="bio" className="text-gray-700">
-                Bio
-              </Label>
-              <Textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleInputChange}
-                placeholder="Tell us about your experience and what you can offer as a mentor"
-                rows={4}
-                required
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="imageUrl" className="text-gray-700">
-                Profile Image URL
+              <Label htmlFor="skills" className="text-gray-700">
+                Technical Skills (comma-separated)
               </Label>
               <Input
-                id="imageUrl"
-                name="imageUrl"
-                value={formData.imageUrl}
+                id="skills"
+                name="skills"
+                value={formData.skills}
                 onChange={handleInputChange}
-                placeholder="https://example.com/your-image.jpg"
+                placeholder="e.g., React, Node.js, AWS, Python"
                 required
                 className="mt-1"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="yearsOfExperience" className="text-gray-700">
+                  Years of Experience
+                </Label>
+                <Input
+                  id="yearsOfExperience"
+                  name="yearsOfExperience"
+                  type="number"
+                  min="0"
+                  value={formData.yearsOfExperience}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxMentees" className="text-gray-700">
+                  Maximum Mentees
+                </Label>
+                <Input
+                  id="maxMentees"
+                  name="maxMentees"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.maxMentees}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <Button

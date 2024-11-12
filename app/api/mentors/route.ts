@@ -1,6 +1,6 @@
+import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   const cookieStore = cookies();
@@ -14,6 +14,9 @@ export async function POST(req: Request) {
     const tokenData = JSON.parse(authToken.value);
     const user = await db.user.findUnique({
       where: { email: tokenData.email },
+      include: {
+        profile: true,
+      },
     });
 
     if (!user) {
@@ -21,7 +24,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, company, expertise, bio, imageUrl, yearsOfExperience, maxMentees } = body;
+    const { expertise, yearsOfExperience, maxMentees, city, state, academicBackground, skills } =
+      body;
 
     // Update user role to MENTOR
     await db.user.update({
@@ -34,21 +38,39 @@ export async function POST(req: Request) {
       data: {
         userId: user.id,
         expertise,
-        yearsOfExperience,
-        maxMentees,
+        yearsOfExperience: Number(yearsOfExperience),
+        maxMentees: Number(maxMentees),
       },
     });
 
     // Update user profile
-    await db.profile.update({
-      where: { userId: user.id },
-      data: {
-        title,
-        company,
-        bio,
-        imageUrl,
-      },
-    });
+    if (user.profile) {
+      await db.profile.update({
+        where: { userId: user.id },
+        data: {
+          city,
+          state,
+          academicBackground,
+          skills,
+        },
+      });
+    } else {
+      await db.profile.create({
+        data: {
+          userId: user.id,
+          firstName: "",
+          lastName: "",
+          phone: "",
+          streetAddress: "",
+          city,
+          state,
+          postalCode: "",
+          dob: new Date(),
+          academicBackground,
+          skills,
+        },
+      });
+    }
 
     return NextResponse.json(mentorProfile);
   } catch (error) {
@@ -59,41 +81,38 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const mentors = await db.mentorProfile.findMany({
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("auth-token");
+
+    if (!authToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const tokenData = JSON.parse(authToken.value);
+
+    // Get current user
+    const currentUser = await db.user.findUnique({
+      where: { email: tokenData.email },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Simply fetch all users with role MENTOR
+    const mentors = await db.user.findMany({
+      where: {
+        role: "MENTOR",
+      },
       include: {
-        user: {
-          select: {
-            id: true,
-            role: true,
-            profile: {
-              select: {
-                firstName: true,
-                lastName: true,
-                title: true,
-                company: true,
-                bio: true,
-                imageUrl: true,
-              },
-            },
-          },
-        },
+        profile: true,
+        mentorProfile: true,
       },
     });
 
-    // Transform the data to match the expected format
-    const formattedMentors = mentors.map((mentor) => ({
-      id: mentor.user.id,
-      profile: mentor.user.profile,
-      MentorProfile: {
-        expertise: mentor.expertise,
-        yearsOfExperience: mentor.yearsOfExperience,
-        maxMentees: mentor.maxMentees,
-      },
-    }));
-
-    return NextResponse.json(formattedMentors);
+    return NextResponse.json(mentors);
   } catch (error) {
-    console.error("[MENTORS_GET]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Error fetching mentors:", error);
+    return NextResponse.json({ error: "Failed to fetch mentors" }, { status: 500 });
   }
 }

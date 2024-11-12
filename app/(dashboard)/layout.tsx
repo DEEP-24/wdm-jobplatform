@@ -100,6 +100,12 @@ const navItems = [
     href: "/manage-applications",
     roles: ["ADMIN", "EMPLOYER"],
   },
+  {
+    name: "Mentorship Applications",
+    icon: FileTextIcon,
+    href: "/mentorship-applications",
+    roles: ["ADMIN", "MENTOR"],
+  },
 ];
 
 interface ModernLayoutProps {

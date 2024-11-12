@@ -29,14 +29,16 @@ model User {
 
   followers Follower[] @relation("UserFollowers")
   following Follower[] @relation("UserFollowing")
-  resources Resource[]
+  Resource  Resource[]
 
-  MentorProfile MentorProfile?
-  MenteeProfile MenteeProfile?
+  mentorProfile MentorProfile?
+
+  menteeProfile MenteeProfile?
 
   mentorshipPrograms MentorshipProgram[]
-  mentorSessions     MentorshipSession[] @relation("MentorSessions")
-  menteeSessions     MentorshipSession[] @relation("MenteeSessions")
+
+  mentorSessions MentorshipSession[] @relation("MentorSessions")
+  menteeSessions MentorshipSession[] @relation("MenteeSessions")
 
   @@map("users")
 }
@@ -54,10 +56,6 @@ model Profile {
   academicBackground String?
   interests          String?
   skills             String?
-  title              String?
-  company            String?
-  bio                String?
-  imageUrl           String?
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
@@ -282,19 +280,6 @@ model MentorshipProgram {
   user            User      @relation(fields: [createdBy], references: [id])
 }
 
-// MentorshipSession Model
-model MentorshipSession {
-  id          String    @id @default(uuid())
-  mentorId    String
-  menteeId    String
-  sessionDate DateTime?
-  startTime   DateTime?
-  endTime     DateTime?
-  sessionType String?
-  mentor      User      @relation("MentorSessions", fields: [mentorId], references: [id])
-  mentee      User      @relation("MenteeSessions", fields: [menteeId], references: [id])
-}
-
 enum UserRole {
   ADMIN
   EMPLOYER
@@ -325,4 +310,32 @@ enum Status {
   Open
   Closed
   Filled
+}
+
+model MentorshipSession {
+  id                     String           @id @default(uuid())
+  sessionDate            DateTime?
+  startTime              DateTime?
+  endTime                DateTime?
+  sessionType            String?
+  status                 MentorshipStatus @default(PENDING)
+  message                String?          @db.Text
+  academicLevel          String?
+  fieldOfStudy           String?
+  careerGoals            String?
+  areasOfInterest        String?
+  expectedGraduationDate DateTime?
+
+  mentor   User   @relation("MentorSessions", fields: [mentorId], references: [id])
+  mentorId String
+  mentee   User   @relation("MenteeSessions", fields: [menteeId], references: [id])
+  menteeId String
+
+  createdAt DateTime @default(now())
+}
+
+enum MentorshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
