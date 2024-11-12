@@ -19,18 +19,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface JobApplication {
   id: string;
-  jobID: string;
-  jobTitle: string;
-  applicantName: string;
-  applicantEmail: string;
-  resumeURL: string;
-  coverLetterURL: string;
-  linkedinURL: string;
-  additionalDocumentsR2URL: string;
+  jobId: string;
+  applicantId: string;
+  resumeURL: string | null;
+  coverLetterURL: string | null;
+  linkedInURL: string | null;
+  additionalDocumentsR2URL: string | null;
   applicationStatus: string;
   submittedAt: string;
   lastUpdated: string;
-  notes: string;
+  notes: string | null;
+  job: {
+    id: string;
+    title: string;
+    company: string;
+    description: string;
+    salaryRange: string;
+    listingType: "Job" | "Internship";
+    workArrangement: "On_site" | "Remote" | "Hybrid";
+    postedAgo: string;
+  };
+  applicant: {
+    id: string;
+    email: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
 }
 
 const statusOptions = ["Under Review", "Interview Scheduled", "Hired", "Rejected"];
@@ -39,41 +55,122 @@ export default function ManageApplicationsPage() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedApplications: JobApplication[] = JSON.parse(
-      localStorage.getItem("appliedJobs") || "[]",
-    );
-    const updatedApplications = storedApplications.map((app) => ({
-      ...app,
-      applicationStatus: app.applicationStatus || "Under Review",
-    }));
-    setApplications(updatedApplications);
-    if (updatedApplications.length > 0) {
-      setSelectedApplication(updatedApplications[0]);
-    }
-    localStorage.setItem("appliedJobs", JSON.stringify(updatedApplications));
+    void fetchApplications();
   }, []);
 
-  const updateApplicationStatus = (id: string, newStatus: string) => {
-    const updatedApplications = applications.map((app) =>
-      app.id === id
-        ? { ...app, applicationStatus: newStatus, lastUpdated: new Date().toISOString() }
-        : app,
-    );
-    setApplications(updatedApplications);
-    localStorage.setItem("appliedJobs", JSON.stringify(updatedApplications));
-    if (selectedApplication && selectedApplication.id === id) {
-      setSelectedApplication({
-        ...selectedApplication,
-        applicationStatus: newStatus,
-        lastUpdated: new Date().toISOString(),
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch("/api/applications");
+      if (!response.ok) {
+        throw new Error("Failed to fetch applications");
+      }
+      const data = await response.json();
+
+      const transformedApplications: JobApplication[] = data.map((app: any) => ({
+        id: app.id,
+        jobId: app.job.id,
+        applicantId: app.applicant.id,
+        resumeURL: app.resumeURL,
+        coverLetterURL: app.coverLetterURL,
+        linkedInURL: app.linkedInURL,
+        additionalDocumentsR2URL: app.additionalDocumentsR2URL,
+        applicationStatus: app.applicationStatus || "Under Review",
+        submittedAt: app.submittedAt,
+        lastUpdated: app.lastUpdated,
+        notes: app.notes,
+        job: {
+          id: app.job.id,
+          title: app.job.title,
+          company: app.job.company,
+          description: app.job.description,
+          salaryRange: app.job.salaryRange,
+          listingType: app.job.listingType,
+          workArrangement: app.job.workArrangement,
+          postedAgo: app.job.postedAgo,
+        },
+        applicant: {
+          id: app.applicant.id,
+          email: app.applicant.email,
+          profile: app.applicant.profile,
+        },
+      }));
+
+      setApplications(transformedApplications);
+      if (transformedApplications.length > 0) {
+        setSelectedApplication(transformedApplications[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load applications",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateApplicationStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch("/api/applications", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          applicationStatus: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      const updatedApplication = await response.json();
+
+      setApplications(
+        applications.map((app) =>
+          app.id === id
+            ? {
+                ...app,
+                applicationStatus: newStatus,
+                lastUpdated: updatedApplication.lastUpdated,
+              }
+            : app,
+        ),
+      );
+
+      if (selectedApplication?.id === id) {
+        setSelectedApplication({
+          ...selectedApplication,
+          applicationStatus: newStatus,
+          lastUpdated: updatedApplication.lastUpdated,
+        });
+      }
+
+      toast({
+        title: "Application Status Updated",
+        description: `Status changed to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
+        variant: "destructive",
       });
     }
-    toast({
-      title: "Application Status Updated",
-      description: `Status changed to ${newStatus}`,
-    });
+  };
+
+  const getApplicantName = (application: JobApplication) => {
+    return application.applicant?.profile
+      ? `${application.applicant.profile.firstName} ${application.applicant.profile.lastName}`
+      : "Unknown Applicant";
   };
 
   return (
@@ -82,12 +179,12 @@ export default function ManageApplicationsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-purple-800">Manage Applications</h1>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
           <Button asChild className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
-            <Link href="/post-job">
+            <Link href="/add-job">
               <Plus className="mr-2 h-4 w-4" /> Post New Job
             </Link>
           </Button>
           <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href="/job-listings">View Job Listings</Link>
+            <Link href="/jobs">View Job Listings</Link>
           </Button>
         </div>
       </div>
@@ -105,7 +202,13 @@ export default function ManageApplicationsPage() {
             </TabsList>
             <TabsContent value="applications" className="m-0">
               <ScrollArea className="h-[calc(100vh-250px)]">
-                {applications.length > 0 ? (
+                {isLoading ? (
+                  <div className="text-center py-10">
+                    <p className="text-xl font-semibold mb-4 text-gray-600">
+                      Loading applications...
+                    </p>
+                  </div>
+                ) : applications.length > 0 ? (
                   applications.map((application) => (
                     <Card
                       key={application.id}
@@ -118,13 +221,13 @@ export default function ManageApplicationsPage() {
                     >
                       <CardHeader>
                         <CardTitle className="text-lg text-purple-800">
-                          {application.applicantName || "Unknown Applicant"}
+                          {getApplicantName(application)}
                         </CardTitle>
-                        <p className="text-sm text-gray-600">{application.jobTitle}</p>
+                        <p className="text-sm text-gray-600">{application.job.title}</p>
                       </CardHeader>
                       <CardContent>
                         <Badge variant="outline" className="mr-2 bg-purple-100 text-purple-800">
-                          {application.applicationStatus}
+                          {application.applicationStatus || "Under Review"}
                         </Badge>
                         <p className="text-xs text-gray-500 mt-2">
                           Applied on: {new Date(application.submittedAt).toLocaleDateString()}
@@ -147,15 +250,15 @@ export default function ManageApplicationsPage() {
                   <>
                     <div className="mb-6">
                       <h2 className="text-2xl font-bold mb-2 text-purple-800">
-                        {selectedApplication.applicantName || "Unknown Applicant"}
+                        {getApplicantName(selectedApplication)}
                       </h2>
-                      <p className="text-lg text-gray-600">{selectedApplication.jobTitle}</p>
+                      <p className="text-lg text-gray-600">{selectedApplication.job.title}</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                       <div>
                         <p className="text-sm font-medium text-gray-500 mb-1">Application Status</p>
                         <Select
-                          value={selectedApplication.applicationStatus}
+                          value={selectedApplication.applicationStatus || "Under Review"}
                           onValueChange={(value) =>
                             updateApplicationStatus(selectedApplication.id, value)
                           }
@@ -174,7 +277,7 @@ export default function ManageApplicationsPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500 mb-1">Email</p>
-                        <p className="text-purple-700">{selectedApplication.applicantEmail}</p>
+                        <p className="text-purple-700">{selectedApplication.applicant.email}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500 mb-1">Submitted On</p>
@@ -182,7 +285,11 @@ export default function ManageApplicationsPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500 mb-1">Last Updated</p>
-                        <p>{new Date(selectedApplication.lastUpdated).toLocaleDateString()}</p>
+                        <p>
+                          {selectedApplication.lastUpdated
+                            ? new Date(selectedApplication.lastUpdated).toLocaleDateString()
+                            : new Date(selectedApplication.submittedAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-4 mb-6">
@@ -193,7 +300,7 @@ export default function ManageApplicationsPage() {
                       />
                       <ApplicationLink
                         label="LinkedIn Profile"
-                        url={selectedApplication.linkedinURL}
+                        url={selectedApplication.linkedInURL}
                       />
                       <ApplicationLink
                         label="Additional Documents"
@@ -223,7 +330,7 @@ export default function ManageApplicationsPage() {
   );
 }
 
-function ApplicationLink({ label, url }: { label: string; url: string }) {
+function ApplicationLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) {
     return null;
   }

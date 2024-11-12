@@ -1,138 +1,172 @@
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import type { ListingType, WorkArrangement } from "@prisma/client";
-
-function mapWorkArrangementToWorkMode(
-  arrangement: WorkArrangement,
-): "onsite" | "remote" | "hybrid" {
-  const map = {
-    On_site: "onsite",
-    Remote: "remote",
-    Hybrid: "hybrid",
-  } as const;
-  return map[arrangement];
-}
-
-async function getCurrentUser() {
-  const cookieStore = cookies();
-  const authToken = cookieStore.get("auth-token");
-
-  if (!authToken) {
-    return null;
-  }
-
-  try {
-    const tokenData = JSON.parse(authToken.value);
-    const user = await db.user.findUnique({
-      where: {
-        email: tokenData.email,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-      },
-    });
-
-    return user;
-  } catch (error) {
-    console.error("Auth check error:", error);
-    return null;
-  }
-}
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("auth-token");
+
+    console.log("Auth token:", authToken?.value);
+
+    if (!authToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const tokenData = JSON.parse(authToken.value);
+    console.log("Token data:", tokenData);
+
+    // Get applications based on whether the user is an applicant or employer
     const applications = await db.jobApplication.findMany({
       where: {
-        applicantId: user.id,
+        applicantId: tokenData.id, // Find applications where the current user is the applicant
       },
       include: {
-        job: true,
+        job: {
+          select: {
+            id: true,
+            title: true,
+            company: true,
+            description: true,
+            requirements: true,
+            responsibilities: true,
+            salaryRange: true,
+            location: true,
+            listingType: true,
+            workArrangement: true,
+            jobType: true,
+            applicationDeadline: true,
+            startDate: true,
+            duration: true,
+            isInternshipPaid: true,
+            requiredSkills: true,
+            postedAt: true,
+          },
+        },
+      },
+      orderBy: {
+        submittedAt: "desc",
       },
     });
 
-    const transformedApplications = applications.map((application) => ({
-      id: application.id,
-      jobId: application.jobId,
-      userId: application.applicantId,
-      name: user.email,
-      email: user.email,
-      resume: application.resumeURL || "",
-      coverLetter: application.coverLetterURL || "",
-      submittedAt: application.submittedAt.toISOString(),
+    // Transform the data to match the expected format
+    const transformedApplications = applications.map((app) => ({
+      id: app.id,
+      jobId: app.jobId,
+      userId: app.applicantId,
+      resumeURL: app.resumeURL || "",
+      coverLetterURL: app.coverLetterURL || "",
+      submittedAt: app.submittedAt.toISOString(),
+      applicationStatus: app.applicationStatus || "Under Review",
       job: {
-        id: application.job.id,
-        title: application.job.title,
-        company: application.job.company,
-        description: application.job.description,
-        fullDescription: application.job.description,
-        salary: application.job.salaryRange || "Salary not specified",
-        type: application.job.listingType.toLowerCase() as "job" | "internship",
-        workMode: mapWorkArrangementToWorkMode(application.job.workArrangement),
-        postedAgo: application.job.postedAt.toISOString(),
+        id: app.job.id,
+        title: app.job.title,
+        company: app.job.company,
+        description: app.job.description,
+        requirements: app.job.requirements,
+        responsibilities: app.job.responsibilities,
+        salary: app.job.salaryRange || "Not specified",
+        location: app.job.location,
+        postedAgo: app.job.postedAt.toISOString(),
+        workMode: app.job.workArrangement.toLowerCase() as "onsite" | "remote" | "hybrid",
+        type: app.job.listingType.toLowerCase() as "job" | "internship",
+        jobType: app.job.jobType as "Full_time" | "Part_time" | "Contract",
+        applicationDeadline: app.job.applicationDeadline?.toISOString() || null,
+        startDate: app.job.startDate?.toISOString() || null,
+        duration: app.job.duration || null,
+        isInternshipPaid: app.job.isInternshipPaid || null,
+        requiredSkills: app.job.requiredSkills || [],
       },
     }));
 
+    console.log("Raw applications:", applications);
+    console.log("Transformed applications:", transformedApplications);
+
     return NextResponse.json(transformedApplications);
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Error fetching applications:", error);
     return NextResponse.json({ error: "Failed to fetch applications" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function PATCH(request: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("auth-token");
+
+    if (!authToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await req.json();
+    const { id, applicationStatus } = await request.json();
 
-    const application = await db.jobApplication.create({
+    const application = await db.jobApplication.update({
+      where: { id },
       data: {
-        jobId: data.jobId,
-        applicantId: user.id,
-        resumeURL: data.resumeURL,
-        coverLetterURL: data.coverLetterURL,
+        applicationStatus,
+        lastUpdated: new Date(),
       },
       include: {
-        job: true,
+        job: {
+          select: {
+            id: true,
+            title: true,
+            company: true,
+            description: true,
+            salaryRange: true,
+            listingType: true,
+            workArrangement: true,
+            postedAt: true,
+          },
+        },
+        applicant: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
     });
 
+    // Transform the updated application to match the frontend format
     const transformedApplication = {
       id: application.id,
       jobId: application.jobId,
       userId: application.applicantId,
-      name: user.email,
-      email: user.email,
+      name: application.applicant.profile
+        ? `${application.applicant.profile.firstName} ${application.applicant.profile.lastName}`
+        : application.applicant.email,
+      email: application.applicant.email,
       resume: application.resumeURL || "",
       coverLetter: application.coverLetterURL || "",
       submittedAt: application.submittedAt.toISOString(),
+      status: application.applicationStatus || "Under Review",
+      lastUpdated: application.lastUpdated?.toISOString() || application.submittedAt.toISOString(),
       job: {
         id: application.job.id,
         title: application.job.title,
         company: application.job.company,
         description: application.job.description,
         fullDescription: application.job.description,
-        salary: application.job.salaryRange || "Salary not specified",
+        salary: application.job.salaryRange || "Not specified",
         type: application.job.listingType.toLowerCase() as "job" | "internship",
-        workMode: mapWorkArrangementToWorkMode(application.job.workArrangement),
+        workMode: application.job.workArrangement.toLowerCase().replace("_", "") as
+          | "onsite"
+          | "remote"
+          | "hybrid",
         postedAgo: application.job.postedAt.toISOString(),
       },
     };
 
     return NextResponse.json(transformedApplication);
-  } catch (error: unknown) {
-    console.error("Error creating application:", error);
-    return NextResponse.json({ error: "Failed to submit application" }, { status: 500 });
+  } catch (error) {
+    console.error("Error updating application:", error);
+    return NextResponse.json({ error: "Failed to update application" }, { status: 500 });
   }
 }

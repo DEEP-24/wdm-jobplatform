@@ -76,18 +76,17 @@ interface Job {
   startDate: string | null;
   duration: string | null;
   isInternshipPaid: boolean | null;
-  requiredSkills: string[];
+  requiredSkills: Array<string | { id: string; skillName: string; jobId: string }>;
 }
 
 interface JobApplication {
   id: string;
   jobId: string;
   userId: string;
-  name: string;
-  email: string;
-  resume: string;
-  coverLetter: string;
+  resumeURL: string;
+  coverLetterURL: string;
   submittedAt: string;
+  applicationStatus: string | null;
   job: Job;
 }
 
@@ -100,6 +99,21 @@ interface AuthUser {
     lastName: string;
   };
 }
+
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  } catch (_error) {
+    return dateString;
+  }
+};
 
 export default function IntegratedJobsPage() {
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
@@ -123,6 +137,9 @@ export default function IntegratedJobsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
+  const [selectedAppliedJob, setSelectedAppliedJob] = useState<Job | null>(null);
+  const [isAppliedJobModalOpen, setIsAppliedJobModalOpen] = useState(false);
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -145,9 +162,14 @@ export default function IntegratedJobsPage() {
     const fetchApplications = async () => {
       try {
         const response = await fetch("/api/jobs/applications");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
+        console.log("Fetched applications:", data);
         setAppliedJobs(data);
-      } catch (_error) {
+      } catch (error) {
+        console.error("Error fetching applications:", error);
         toast({
           title: "Error",
           description: "Failed to fetch applications",
@@ -156,8 +178,10 @@ export default function IntegratedJobsPage() {
       }
     };
 
-    fetchApplications();
-  }, []);
+    if (currentUser) {
+      fetchApplications();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -176,43 +200,50 @@ export default function IntegratedJobsPage() {
   }, []);
 
   const onSubmitApplication = async (data: any) => {
-    if (selectedJob && currentUser) {
-      try {
-        const response = await fetch("/api/jobs/applications", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            jobId: selectedJob.id,
-            resumeURL: data.resume,
-            coverLetterURL: data.coverLetter,
-          }),
-        });
+    if (!selectedJob || !currentUser) {
+      toast({
+        title: "Error",
+        description: "Please log in to apply",
+        variant: "destructive",
+      });
+      return;
+    }
 
-        if (!response.ok) {
-          throw new Error("Failed to submit application");
-        }
+    try {
+      const response = await fetch("/api/jobs/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobId: selectedJob.id,
+          resumeURL: data.resume,
+          coverLetterURL: data.coverLetter,
+        }),
+      });
 
-        const newApplication = await response.json();
-        setAppliedJobs((prev) => [...prev, newApplication]);
-
-        reset();
-        toast({
-          title: "Success",
-          description: "Your application has been successfully submitted.",
-        });
-
-        setIsApplicationFormVisible(false);
-        setIsJobModalOpen(false);
-      } catch (error: unknown) {
-        console.error("Error submitting application:", error);
-        toast({
-          title: "Error",
-          description: "Failed to submit application",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        throw new Error("Failed to submit application");
       }
+
+      const newApplication = await response.json();
+      setAppliedJobs((prev) => [...prev, newApplication]);
+
+      reset();
+      toast({
+        title: "Success",
+        description: "Your application has been successfully submitted.",
+      });
+
+      setIsApplicationFormVisible(false);
+      setIsJobModalOpen(false);
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit application",
+        variant: "destructive",
+      });
     }
   };
 
@@ -285,7 +316,8 @@ export default function IntegratedJobsPage() {
               <DollarSign className="mr-1 h-3 w-3" /> {job.salary}
             </Badge>
             <Badge variant="outline" className="flex items-center">
-              <Briefcase className="mr-1 h-3 w-3" /> {job.jobType.replace("_", " ")}
+              <Briefcase className="mr-1 h-3 w-3" />{" "}
+              {job.jobType?.replace("_", " ") || "Not specified"}
             </Badge>
             <Badge variant="outline" className="flex items-center">
               <MapPin className="mr-1 h-3 w-3" /> {job.workMode}
@@ -298,7 +330,7 @@ export default function IntegratedJobsPage() {
               {job.requiredSkills.slice(0, 3).map((skill, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                 <Badge key={index} variant="secondary" className="text-xs">
-                  {skill}
+                  {typeof skill === "string" ? skill : skill.skillName}
                 </Badge>
               ))}
               {job.requiredSkills.length > 3 && (
@@ -333,7 +365,7 @@ export default function IntegratedJobsPage() {
             )}
             <div className="flex items-center">
               <Clock className="mr-1 h-3 w-3" />
-              <span>Posted {job.postedAgo}</span>
+              <span>Posted {formatDate(job.postedAgo)}</span>
             </div>
           </div>
         </div>
@@ -475,7 +507,7 @@ export default function IntegratedJobsPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold text-purple-800 mb-4">Applied Jobs</h2>
               <ScrollArea className="h-[calc(100vh-200px)]">
-                {appliedJobs.length > 0 ? (
+                {appliedJobs && appliedJobs.length > 0 ? (
                   <div className="space-y-6">
                     {appliedJobs.map((application) => (
                       <Card
@@ -483,115 +515,116 @@ export default function IntegratedJobsPage() {
                         className="w-full hover:shadow-lg transition-shadow duration-300"
                       >
                         <CardHeader className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-t-lg">
-                          <CardTitle className="text-lg sm:text-xl font-bold text-purple-800">
-                            {application.job.title}
-                          </CardTitle>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <BuildingIcon className="w-4 h-4 mr-2" />
-                            {application.job.company}
-                          </p>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg sm:text-xl font-bold text-purple-800">
+                                {application.job.title}
+                              </CardTitle>
+                              <p className="text-sm text-gray-600 flex items-center">
+                                <BuildingIcon className="w-4 h-4 mr-2" />
+                                {application.job.company}
+                              </p>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={`
+                                ${
+                                  application.applicationStatus === "Hired"
+                                    ? "bg-green-100 text-green-800"
+                                    : application.applicationStatus === "Rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : application.applicationStatus === "Interview Scheduled"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-purple-100 text-purple-800"
+                                }
+                              `}
+                            >
+                              {application.applicationStatus || "Under Review"}
+                            </Badge>
+                          </div>
                         </CardHeader>
                         <CardContent className="p-6">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="flex items-center space-x-2">
-                              <CalendarIcon className="w-5 h-5 text-purple-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Applied On</p>
-                                <p className="text-sm">
-                                  {new Date(application.submittedAt).toLocaleDateString()}
-                                </p>
+                          {/* Job Details Section */}
+                          <div className="mb-6">
+                            <h3 className="text-sm font-semibold text-purple-800 mb-3">
+                              Job Details
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                              <div className="flex items-center space-x-2">
+                                <BriefcaseIcon className="w-5 h-5 text-purple-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Job Type</p>
+                                  <p className="text-sm capitalize">
+                                    {application.job.jobType.split("_").join(" ")}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <BriefcaseIcon className="w-5 h-5 text-purple-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Job Type</p>
-                                <p className="text-sm capitalize">
-                                  {application.job.jobType.replace("_", " ")}
-                                </p>
+                              <div className="flex items-center space-x-2">
+                                <DollarSignIcon className="w-5 h-5 text-purple-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">Salary</p>
+                                  <p className="text-sm">{application.job.salary}</p>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <DollarSignIcon className="w-5 h-5 text-purple-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Salary</p>
-                                <p className="text-sm">{application.job.salary}</p>
-                              </div>
-                            </div>
-                            {application.job.workMode === "onsite" && application.job.location && (
                               <div className="flex items-center space-x-2">
                                 <MapPinIcon className="w-5 h-5 text-purple-600" />
                                 <div>
-                                  <p className="text-sm font-medium text-gray-500">Location</p>
-                                  <p className="text-sm">{application.job.location}</p>
+                                  <p className="text-sm font-medium text-gray-500">Work Mode</p>
+                                  <p className="text-sm capitalize">{application.job.workMode}</p>
                                 </div>
                               </div>
-                            )}
-                            {application.job.applicationDeadline && (
-                              <div className="flex items-center space-x-2">
-                                <CalendarIcon className="w-5 h-5 text-purple-600" />
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">
-                                    Application Deadline
-                                  </p>
-                                  <p className="text-sm">
-                                    {new Date(
-                                      application.job.applicationDeadline,
-                                    ).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {application.job.startDate && (
-                              <div className="flex items-center space-x-2">
-                                <CalendarIcon className="w-5 h-5 text-purple-600" />
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">Start Date</p>
-                                  <p className="text-sm">
-                                    {new Date(application.job.startDate).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
+                            </div>
                           </div>
 
-                          <div className="mt-6 space-y-4">
-                            {application.job.requirements && (
-                              <div>
-                                <h3 className="text-sm font-semibold text-purple-800">
-                                  Requirements
-                                </h3>
-                                <p className="text-sm text-gray-700">
-                                  {application.job.requirements}
+                          {/* Application Details */}
+                          <div className="mb-6 border-t pt-4">
+                            <h3 className="text-sm font-semibold text-purple-800 mb-3">
+                              Application Details
+                            </h3>
+                            <div className="space-y-2">
+                              <p className="text-sm">
+                                <span className="font-medium">Submitted:</span>{" "}
+                                {new Date(application.submittedAt).toLocaleDateString()}
+                              </p>
+                              {application.resumeURL && (
+                                <p className="text-sm">
+                                  <span className="font-medium">Resume:</span>{" "}
+                                  <a
+                                    href={application.resumeURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-600 hover:underline"
+                                  >
+                                    View Resume
+                                  </a>
                                 </p>
-                              </div>
-                            )}
-                            {application.job.responsibilities && (
-                              <div>
-                                <h3 className="text-sm font-semibold text-purple-800">
-                                  Responsibilities
-                                </h3>
-                                <p className="text-sm text-gray-700">
-                                  {application.job.responsibilities}
-                                </p>
-                              </div>
-                            )}
-                            {application.job.requiredSkills &&
-                              application.job.requiredSkills.length > 0 && (
-                                <div>
-                                  <h3 className="text-sm font-semibold text-purple-800">
-                                    Required Skills
-                                  </h3>
-                                  <div className="flex flex-wrap gap-2 mt-2">
-                                    {application.job.requiredSkills.map((skill, index) => (
-                                      // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                                      <Badge key={index} variant="secondary">
-                                        {skill}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
                               )}
+                              {application.coverLetterURL && (
+                                <p className="text-sm">
+                                  <span className="font-medium">Cover Letter:</span>{" "}
+                                  <a
+                                    href={application.coverLetterURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-600 hover:underline"
+                                  >
+                                    View Cover Letter
+                                  </a>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex justify-end">
+                            <Button
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                              onClick={() => {
+                                setSelectedAppliedJob(application.job);
+                                setIsAppliedJobModalOpen(true);
+                              }}
+                            >
+                              View Full Details
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -714,7 +747,7 @@ export default function IntegratedJobsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-600">Posted</h3>
-                      <p className="text-sm">{selectedJob.postedAgo}</p>
+                      <p className="text-sm">{formatDate(selectedJob.postedAgo)}</p>
                     </div>
                     {selectedJob.applicationDeadline && (
                       <div>
@@ -780,7 +813,7 @@ export default function IntegratedJobsPage() {
                         {selectedJob.requiredSkills.map((skill, index) => (
                           // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           <Badge key={index} variant="secondary">
-                            {skill}
+                            {typeof skill === "string" ? skill : skill.skillName}
                           </Badge>
                         ))}
                       </div>
@@ -811,6 +844,130 @@ export default function IntegratedJobsPage() {
 
                   {/* Application Form */}
                   {isApplicationFormVisible && renderApplicationForm()}
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAppliedJobModalOpen} onOpenChange={setIsAppliedJobModalOpen}>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-purple-800">
+                {selectedAppliedJob?.title}
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-4">
+              {selectedAppliedJob && (
+                <div className="space-y-6">
+                  {/* Company and Location */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Building className="h-4 w-4 text-gray-500" />
+                      <p className="text-sm font-medium">{selectedAppliedJob.company}</p>
+                    </div>
+                    {selectedAppliedJob.workMode === "onsite" && selectedAppliedJob.location && (
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <p className="text-sm">{selectedAppliedJob.location}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Job Details Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="flex items-center">
+                      <DollarSign className="mr-1 h-3 w-3" /> {selectedAppliedJob.salary}
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center">
+                      <Briefcase className="mr-1 h-3 w-3" /> {selectedAppliedJob.type}
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center">
+                      <Clock className="mr-1 h-3 w-3" />{" "}
+                      {selectedAppliedJob.jobType.replace("_", " ")}
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center">
+                      <MapPin className="mr-1 h-3 w-3" /> {selectedAppliedJob.workMode}
+                    </Badge>
+                  </div>
+
+                  {/* Important Dates and Duration */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-600">Posted</h3>
+                      <p className="text-sm">{formatDate(selectedAppliedJob.postedAgo)}</p>
+                    </div>
+                    {selectedAppliedJob.applicationDeadline && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">
+                          Application Deadline
+                        </h3>
+                        <p className="text-sm">
+                          {new Date(selectedAppliedJob.applicationDeadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAppliedJob.startDate && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">Start Date</h3>
+                        <p className="text-sm">
+                          {new Date(selectedAppliedJob.startDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAppliedJob.duration && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-600">Duration</h3>
+                        <p className="text-sm">{selectedAppliedJob.duration}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Job Content */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-purple-800">Description</h3>
+                      <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                        {selectedAppliedJob.description}
+                      </p>
+                    </div>
+
+                    {selectedAppliedJob.responsibilities && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-purple-800">Responsibilities</h3>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                          {selectedAppliedJob.responsibilities}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedAppliedJob.requirements && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-purple-800">Requirements</h3>
+                        <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
+                          {selectedAppliedJob.requirements}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Required Skills */}
+                  {selectedAppliedJob.requiredSkills &&
+                    selectedAppliedJob.requiredSkills.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-purple-800 mb-2">
+                          Required Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedAppliedJob.requiredSkills.map((skill, index) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                            <Badge key={index} variant="secondary">
+                              {typeof skill === "string" ? skill : skill.skillName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
               )}
             </ScrollArea>

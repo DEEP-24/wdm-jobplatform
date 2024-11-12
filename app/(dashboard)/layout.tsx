@@ -94,6 +94,12 @@ const navItems = [
     href: "/contact",
     roles: ["ADMIN", "USER", "EMPLOYER", "MENTOR"],
   },
+  {
+    name: "Applications",
+    icon: FileTextIcon,
+    href: "/manage-applications",
+    roles: ["ADMIN", "EMPLOYER"],
+  },
 ];
 
 interface ModernLayoutProps {
