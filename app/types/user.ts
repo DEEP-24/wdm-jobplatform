@@ -9,10 +9,11 @@ export interface Profile {
   dob: string;
 }
 
-export interface User {
+export type User = {
   id: string;
   email: string;
-  role: string;
-  profile?: Profile;
-  notificationPreferences?: string;
-}
+  firstName: string;
+  lastName: string;
+  following?: User[];
+  followers?: User[];
+};

@@ -27,6 +27,9 @@ model User {
   JobApplication JobApplication[]
   SavedJob       SavedJob[]
 
+  followers Follower[] @relation("UserFollowers")
+  following Follower[] @relation("UserFollowing")
+
   @@map("users")
 }
 
@@ -122,18 +125,19 @@ enum EventType {
   SEMINAR
 }
 
-// // Follower Model
-// model Follower {
-//   id          String   @id @default(uuid())
-//   followerId  String
-//   followingId String
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-//   follower    User     @relation("UserFollowers", fields: [followerId], references: [id])
-//   following   User     @relation("UserFollowing", fields: [followingId], references: [id])
+// Follower Model
+model Follower {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-//   @@unique([followerId, followingId])
-// }
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
+  following User @relation("UserFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
 
 // // Message Model
 // model Message {

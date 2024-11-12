@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { User } from "@/app/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { Poppins } from "next/font/google";
 import { UserPlus, UserMinus, MessageSquare, Users, Network } from "lucide-react";
@@ -33,6 +32,17 @@ const interestGroups = [
   { id: 5, name: "Space Exploration Society", members: 1100 },
 ];
 
+type User = {
+  id: string;
+  email: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+  } | null;
+  following?: User[];
+  followers?: User[];
+};
+
 export default function AcademicNetworkPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -41,18 +51,46 @@ export default function AcademicNetworkPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem("users") || "[]");
-    const storedCurrentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
-    const storedFollowingIds = JSON.parse(
-      localStorage.getItem(`following_${storedCurrentUser?.id}`) || "[]",
-    );
+    const fetchUsers = async () => {
+      try {
+        // Get current user
+        const currentUserResponse = await fetch("/api/auth/check");
+        const currentUserData = await currentUserResponse.json();
 
-    setUsers(storedUsers.filter((user: User) => user.id !== storedCurrentUser?.id));
-    setCurrentUser(storedCurrentUser);
-    setFollowingIds(storedFollowingIds);
-  }, []);
+        if (!currentUserData.authenticated) {
+          toast({
+            title: "Error",
+            description: "You must be logged in to view the network.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-  const handleFollow = (userToFollow: User) => {
+        setCurrentUser(currentUserData.user);
+
+        // Get all users except current user
+        const usersResponse = await fetch("/api/users");
+        const usersData = await usersResponse.json();
+        setUsers(usersData.filter((user: User) => user.id !== currentUserData.user.id));
+
+        // Get following ids
+        const followingResponse = await fetch("/api/users/following");
+        const followingData = await followingResponse.json();
+        setFollowingIds(followingData.map((follow: { followingId: string }) => follow.followingId));
+      } catch (err: unknown) {
+        console.error(err);
+        toast({
+          title: "Error",
+          description: "Failed to load users",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchUsers();
+  }, [toast]);
+
+  const handleFollow = async (userToFollow: User) => {
     if (!currentUser) {
       toast({
         title: "Error",
@@ -62,17 +100,36 @@ export default function AcademicNetworkPage() {
       return;
     }
 
-    const newFollowingIds = [...followingIds, userToFollow.id];
-    setFollowingIds(newFollowingIds);
-    localStorage.setItem(`following_${currentUser.id}`, JSON.stringify(newFollowingIds));
+    try {
+      const response = await fetch(`/api/users/${userToFollow.id}/follow`, {
+        method: "POST",
+      });
 
-    toast({
-      title: "Success",
-      description: `You are now following ${userToFollow.firstName} ${userToFollow.lastName}.`,
-    });
+      if (!response.ok) {
+        throw new Error("Failed to follow user");
+      }
+
+      setFollowingIds([...followingIds, userToFollow.id]);
+
+      const name = userToFollow.profile
+        ? `${userToFollow.profile.firstName} ${userToFollow.profile.lastName}`
+        : userToFollow.email;
+
+      toast({
+        title: "Success",
+        description: `You are now following ${name}.`,
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to follow user",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUnfollow = (userToUnfollow: User) => {
+  const handleUnfollow = async (userToUnfollow: User) => {
     if (!currentUser) {
       toast({
         title: "Error",
@@ -82,14 +139,33 @@ export default function AcademicNetworkPage() {
       return;
     }
 
-    const newFollowingIds = followingIds.filter((id) => id !== userToUnfollow.id);
-    setFollowingIds(newFollowingIds);
-    localStorage.setItem(`following_${currentUser.id}`, JSON.stringify(newFollowingIds));
+    try {
+      const response = await fetch(`/api/users/${userToUnfollow.id}/unfollow`, {
+        method: "POST",
+      });
 
-    toast({
-      title: "Success",
-      description: `You have unfollowed ${userToUnfollow.firstName} ${userToUnfollow.lastName}.`,
-    });
+      if (!response.ok) {
+        throw new Error("Failed to unfollow user");
+      }
+
+      setFollowingIds(followingIds.filter((id) => id !== userToUnfollow.id));
+
+      const name = userToUnfollow.profile
+        ? `${userToUnfollow.profile.firstName} ${userToUnfollow.profile.lastName}`
+        : userToUnfollow.email;
+
+      toast({
+        title: "Success",
+        description: `You have unfollowed ${name}.`,
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to unfollow user",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter forums based on search term
@@ -108,12 +184,18 @@ export default function AcademicNetworkPage() {
 
   // Filter users based on search term
   const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    return users.filter((user) => {
+      const searchString = searchTerm.toLowerCase();
+      const firstName = user.profile?.firstName?.toLowerCase() || "";
+      const lastName = user.profile?.lastName?.toLowerCase() || "";
+      const email = user.email.toLowerCase();
+
+      return (
+        firstName.includes(searchString) ||
+        lastName.includes(searchString) ||
+        email.includes(searchString)
+      );
+    });
   }, [searchTerm, users]);
 
   return (
@@ -199,16 +281,23 @@ export default function AcademicNetworkPage() {
                         <div className="flex items-center space-x-4 mb-4">
                           <Avatar className="w-16 h-16">
                             <AvatarImage
-                              src={`https://api.dicebear.com/6.x/initials/svg?seed=${user.firstName} ${user.lastName}`}
+                              src={`https://api.dicebear.com/6.x/initials/svg?seed=${
+                                user.profile
+                                  ? `${user.profile.firstName} ${user.profile.lastName}`
+                                  : user.email
+                              }`}
                             />
                             <AvatarFallback className="bg-purple-200 text-purple-800 text-xl font-bold">
-                              {user.firstName[0]}
-                              {user.lastName[0]}
+                              {user.profile
+                                ? `${user.profile.firstName[0]}${user.profile.lastName[0]}`
+                                : user.email[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <h3 className="text-lg font-semibold text-purple-800">
-                              {user.firstName} {user.lastName}
+                              {user.profile
+                                ? `${user.profile.firstName} ${user.profile.lastName}`
+                                : user.email}
                             </h3>
                             <p className="text-sm text-gray-600">{user.email}</p>
                           </div>
