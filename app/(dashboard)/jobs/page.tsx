@@ -30,12 +30,26 @@ import {
   MapPinIcon,
   Plus,
   Search,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Poppins } from "next/font/google";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useInView } from "react-intersection-observer";
+import { useRouter } from "next/navigation";
+import { UserRole } from "@prisma/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -103,6 +117,11 @@ export default function IntegratedJobsPage() {
   const [activeTab, setActiveTab] = useState("browse");
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  const router = useRouter();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -208,6 +227,35 @@ export default function IntegratedJobsPage() {
     }
   };
 
+  const handleDelete = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete job");
+      }
+
+      setDisplayedJobs((prev) => prev.filter((job) => job.id !== jobId));
+
+      toast({
+        title: "Success",
+        description: "Job has been successfully deleted.",
+      });
+
+      setIsDeleteDialogOpen(false);
+      setJobToDelete(null);
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderJobCard = (job: Job) => (
     <Card
       key={job.id}
@@ -290,7 +338,7 @@ export default function IntegratedJobsPage() {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-gray-50 p-4">
+      <CardFooter className="bg-gray-50 p-4 flex flex-col gap-2">
         <Button
           className="w-full bg-purple-600 hover:bg-purple-700 text-white"
           onClick={() => {
@@ -300,6 +348,29 @@ export default function IntegratedJobsPage() {
         >
           View Details
         </Button>
+        {currentUser?.role === UserRole.EMPLOYER && (
+          <div className="flex gap-2 w-full">
+            <Button
+              variant="outline"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={() => router.push(`/edit-job/${job.id}`)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => {
+                setJobToDelete(job);
+                setIsDeleteDialogOpen(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );
@@ -563,12 +634,48 @@ export default function IntegratedJobsPage() {
           </TabsContent>
         </Tabs>
 
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the job listing "
+                {jobToDelete?.title}" and remove it from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => jobToDelete && handleDelete(jobToDelete.id)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Dialog open={isJobModalOpen} onOpenChange={setIsJobModalOpen}>
           <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-purple-800">
-                {selectedJob?.title}
-              </DialogTitle>
+              <div className="flex justify-between items-center">
+                <DialogTitle className="text-2xl font-bold text-purple-800">
+                  {selectedJob?.title}
+                </DialogTitle>
+                {currentUser?.role === "employer" && (
+                  <Button
+                    variant="outline"
+                    className="bg-white hover:bg-gray-100"
+                    onClick={() => {
+                      setIsJobModalOpen(false);
+                      router.push(`/edit-job/${selectedJob?.id}`);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+              </div>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4">
               {selectedJob && (
