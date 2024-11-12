@@ -16,22 +16,14 @@ interface MentorFormData {
   expertise: string;
   bio: string;
   imageUrl: string;
-}
-
-interface CurrentUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  // Add other fields as necessary
+  yearsOfExperience: number;
+  maxMentees: number;
 }
 
 export default function BecomeAMentorPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMentor, setIsMentor] = useState(false);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [formData, setFormData] = useState<MentorFormData>({
     name: "",
     title: "",
@@ -39,33 +31,37 @@ export default function BecomeAMentorPage() {
     expertise: "",
     bio: "",
     imageUrl: "",
+    yearsOfExperience: 0,
+    maxMentees: 5,
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const user: CurrentUser = JSON.parse(storedUser);
-      setCurrentUser(user);
-      setFormData((prevData) => ({
-        ...prevData,
-        name: `${user.firstName} ${user.lastName}`,
-        // You can pre-fill other fields if they're available in the user data
-      }));
+    const checkAuth = async () => {
+      const response = await fetch("/api/auth/check");
+      const data = await response.json();
 
-      const mentors = JSON.parse(localStorage.getItem("mentors") || "[]");
-      const userIsMentor = mentors.some((mentor: any) => mentor.id === user.id);
-      setIsMentor(userIsMentor);
+      if (!data.authenticated) {
+        router.push("/login");
+        return;
+      }
 
-      if (userIsMentor) {
+      const user = data.user;
+      if (user.profile) {
+        setFormData((prev) => ({
+          ...prev,
+          name: `${user.profile.firstName} ${user.profile.lastName}`,
+        }));
+      }
+
+      if (user.role === "MENTOR") {
         toast({
           title: "Already a Mentor",
           description: "You are already registered as a mentor.",
         });
-        router.push("/mentors");
       }
-    } else {
-      router.push("/login");
-    }
+    };
+
+    checkAuth();
   }, [router, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -80,14 +76,23 @@ export default function BecomeAMentorPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const mentors = JSON.parse(localStorage.getItem("mentors") || "[]");
-      const newMentor = {
-        id: currentUser?.id,
-        ...formData,
-        expertise: formData.expertise.split(",").map((skill) => skill.trim()),
-      };
-      mentors.push(newMentor);
-      localStorage.setItem("mentors", JSON.stringify(mentors));
+      const response = await fetch("/api/mentors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          expertise: formData.expertise
+            .split(",")
+            .map((skill) => skill.trim())
+            .join(","),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit application");
+      }
 
       toast({
         title: "Application Submitted",
@@ -105,10 +110,6 @@ export default function BecomeAMentorPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (isMentor) {
-    return null;
-  }
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">

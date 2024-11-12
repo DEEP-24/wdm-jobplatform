@@ -54,6 +54,10 @@ model Profile {
   academicBackground String?
   interests          String?
   skills             String?
+  title              String?
+  company            String?
+  bio                String?
+  imageUrl           String?
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])

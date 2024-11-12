@@ -44,12 +44,12 @@ const poppins = Poppins({
 });
 
 const navItems = [
-  { name: "Home", icon: HomeIcon, href: "/", roles: ["ADMIN", "USER"] },
+  { name: "Home", icon: HomeIcon, href: "/", roles: ["ADMIN", "USER", "MENTOR"] },
   {
     name: "Opportunities",
     icon: BriefcaseIcon,
     href: "/jobs",
-    roles: ["ADMIN", "EMPLOYER", "USER"],
+    roles: ["ADMIN", "EMPLOYER", "USER", "MENTOR"],
   },
   {
     name: "Add Job",
@@ -61,13 +61,13 @@ const navItems = [
     name: "Networking",
     icon: Users2Icon,
     href: "/networking",
-    roles: ["ADMIN", "USER"],
+    roles: ["ADMIN", "USER", "MENTOR"],
   },
   {
     name: "Reservations",
     icon: CalendarDaysIcon,
     href: "/reservations",
-    roles: ["ADMIN", "USER"],
+    roles: ["ADMIN", "USER", "MENTOR"],
   },
   {
     name: "Add Event",
@@ -79,7 +79,7 @@ const navItems = [
     name: "Academic Events",
     icon: CalendarIcon,
     href: "/academic-events",
-    roles: ["ADMIN", "ORGANIZER", "USER"],
+    roles: ["ADMIN", "ORGANIZER", "USER", "MENTOR"],
   },
   { name: "Mentors", icon: Users2Icon, href: "/mentors", roles: ["ADMIN", "MENTOR", "USER"] },
   {

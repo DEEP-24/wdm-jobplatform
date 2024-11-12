@@ -53,36 +53,6 @@ interface Mentor {
   imageUrl: string;
 }
 
-const mockMentors: Mentor[] = [
-  {
-    id: "1",
-    name: "Dr. Emily Chen",
-    title: "Senior Data Scientist",
-    company: "TechCorp",
-    expertise: ["Machine Learning", "AI Ethics", "Data Visualization"],
-    bio: "With over 10 years of experience in data science, Dr. Chen specializes in developing ethical AI solutions.",
-    imageUrl: "https://i.pravatar.cc/150?img=1",
-  },
-  {
-    id: "2",
-    name: "Michael Rodriguez",
-    title: "Full Stack Developer",
-    company: "WebSolutions Inc.",
-    expertise: ["React", "Node.js", "Cloud Architecture"],
-    bio: "Michael is passionate about building scalable web applications and mentoring junior developers.",
-    imageUrl: "https://i.pravatar.cc/150?img=3",
-  },
-  {
-    id: "3",
-    name: "Sarah Johnson",
-    title: "UX/UI Design Lead",
-    company: "DesignMasters",
-    expertise: ["User Research", "Interaction Design", "Accessibility"],
-    bio: "Sarah has a keen eye for design and a deep understanding of user-centered design principles.",
-    imageUrl: "https://i.pravatar.cc/150?img=5",
-  },
-];
-
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -223,14 +193,48 @@ export default function MentorsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
-    const storedMentors: Mentor[] = JSON.parse(localStorage.getItem("mentors") || "[]");
-    setMentors([...mockMentors, ...storedMentors]);
+    const fetchMentors = async () => {
+      try {
+        const response = await fetch("/api/mentors");
+        if (!response.ok) {
+          throw new Error("Failed to fetch mentors");
+        }
+        const data = await response.json();
 
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setIsMentor(storedMentors.some((mentor) => mentor.id === user.id));
-    }
+        console.log("Mentor data:", data);
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const formattedMentors: Mentor[] = data.map((mentor: any) => ({
+            id: mentor.id,
+            name: `${mentor.profile?.firstName || ""} ${mentor.profile?.lastName || ""}`.trim(),
+            title: mentor.profile?.title || "",
+            company: mentor.profile?.company || "",
+            expertise: mentor.MentorProfile?.expertise?.split(",") || [],
+            bio: mentor.profile?.bio || "",
+            imageUrl: mentor.profile?.imageUrl || "https://i.pravatar.cc/150?img=1",
+          }));
+
+          const validMentors = formattedMentors.filter((mentor) => mentor.name.length > 0);
+          setMentors(validMentors);
+        } else {
+          setMentors([]);
+        }
+      } catch (error) {
+        console.error("Error fetching mentors:", error);
+        setMentors([]);
+      }
+    };
+
+    const checkUserStatus = async () => {
+      const response = await fetch("/api/auth/check");
+      const data = await response.json();
+      if (data.authenticated) {
+        setIsMentor(data.user.role === "MENTOR");
+      }
+    };
+
+    fetchMentors();
+    checkUserStatus();
   }, []);
 
   useEffect(() => {
