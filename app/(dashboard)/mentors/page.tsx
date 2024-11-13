@@ -44,8 +44,8 @@ const poppins = Poppins({
 });
 
 interface Profile {
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   imageUrl?: string;
   title?: string;
   company?: string;
@@ -63,11 +63,35 @@ interface MentorProfile {
 
 interface Mentor {
   id: string;
-  name: string;
   email: string;
   role: string;
-  profile?: Profile;
-  mentorProfile?: MentorProfile;
+  profile: Profile | null;
+  mentorProfile?: MentorProfile | null;
+}
+
+interface MentorshipApplication {
+  id: string;
+  mentor: {
+    id: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+      imageUrl?: string;
+    };
+    email: string;
+  };
+  academicLevel: string;
+  fieldOfStudy: string;
+  careerGoals: string;
+  areasOfInterest: string;
+  expectedGraduationDate: string;
+  message: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  createdAt: string;
+  sessionDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  sessionType: string | null;
 }
 
 const formSchema = z.object({
@@ -82,6 +106,12 @@ const formSchema = z.object({
   }),
   message: z.string().min(10, {
     message: "Message must be at least 10 characters.",
+  }),
+  sessionDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  sessionType: z.string().min(1, {
+    message: "Please select a session type.",
   }),
   academicLevel: z.string().min(1, {
     message: "Please select your academic level.",
@@ -100,6 +130,167 @@ const formSchema = z.object({
   }),
 });
 
+function ApplicationDetailsDialog({
+  application,
+  open,
+  onOpenChange,
+}: {
+  application: MentorshipApplication;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-purple-800">
+            Application Details
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Mentor Information */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Mentor Information</h3>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={application.mentor?.profile?.imageUrl} />
+                <AvatarFallback className="bg-purple-100 text-purple-700">
+                  {`${application.mentor?.profile?.firstName?.[0] || ""}${
+                    application.mentor?.profile?.lastName?.[0] || ""
+                  }`}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold">
+                  {`${application.mentor?.profile?.firstName} ${application.mentor?.profile?.lastName}`}
+                </p>
+                <p className="text-sm text-gray-500">{application.mentor?.email}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Session Details */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Session Details</h3>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {application.sessionDate && (
+                <div>
+                  <p className="font-medium text-gray-600">Session Date</p>
+                  <p className="text-sm">
+                    {format(new Date(application.sessionDate), "dd MMM yyyy")}
+                  </p>
+                </div>
+              )}
+              {application.sessionType && (
+                <div>
+                  <p className="font-medium text-gray-600">Session Type</p>
+                  <p className="text-sm">{application.sessionType}</p>
+                </div>
+              )}
+              {application.startTime && (
+                <div>
+                  <p className="font-medium text-gray-600">Start Time</p>
+                  <p className="text-sm">{format(new Date(application.startTime), "hh:mm a")}</p>
+                </div>
+              )}
+              {application.endTime && (
+                <div>
+                  <p className="font-medium text-gray-600">End Time</p>
+                  <p className="text-sm">{format(new Date(application.endTime), "hh:mm a")}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Academic Information */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Academic Information</h3>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <p className="font-medium text-gray-600">Academic Level</p>
+                <p className="text-sm">{application.academicLevel}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-600">Field of Study</p>
+                <p className="text-sm">{application.fieldOfStudy}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-600">Expected Graduation</p>
+                <p className="text-sm">
+                  {format(new Date(application.expectedGraduationDate), "MMM yyyy")}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-600">Applied On</p>
+                <p className="text-sm">{format(new Date(application.createdAt), "dd MMM yyyy")}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Career Information */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Career Information</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium text-gray-600">Career Goals</p>
+                <p className="text-sm mt-1">{application.careerGoals}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-600">Areas of Interest</p>
+                <p className="text-sm mt-1">{application.areasOfInterest}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Application Message */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Your Message</h3>
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{application.message}</p>
+          </div>
+
+          {/* Application Status */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="h-4 w-1 bg-purple-600 rounded-full" />
+              <h3 className="text-lg font-semibold text-purple-800">Application Status</h3>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <p className="font-medium text-gray-600">Current Status</p>
+              <Badge
+                className={
+                  application.status === "PENDING"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : application.status === "ACCEPTED"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                }
+              >
+                {application.status}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () => void }) {
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -110,6 +301,10 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
       email: "",
       mentor: "",
       message: "",
+      sessionDate: "",
+      startTime: "",
+      endTime: "",
+      sessionType: "",
       academicLevel: "",
       fieldOfStudy: "",
       careerGoals: "",
@@ -145,6 +340,10 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
         body: JSON.stringify({
           mentorId: values.mentor,
           message: values.message,
+          sessionDate: values.sessionDate ? new Date(values.sessionDate) : null,
+          startTime: values.startTime ? new Date(values.startTime) : null,
+          endTime: values.endTime ? new Date(values.endTime) : null,
+          sessionType: values.sessionType,
           academicLevel: values.academicLevel,
           fieldOfStudy: values.fieldOfStudy,
           careerGoals: values.careerGoals,
@@ -153,8 +352,15 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to submit application");
+        toast({
+          title: "Error",
+          description: data.error || "Failed to submit application. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
@@ -208,6 +414,82 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
                   <FormLabel className="text-sm font-medium">Email</FormLabel>
                   <FormControl>
                     <Input {...field} disabled className="bg-gray-50 border-gray-200" />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Session Details Section */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center space-x-2">
+            <div className="h-4 w-1 bg-purple-600 rounded-full" />
+            <h3 className="text-lg font-semibold text-purple-800">Session Details</h3>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="sessionDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Preferred Session Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} className="bg-white border-gray-200" />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="sessionType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Session Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-white border-gray-200">
+                        <SelectValue placeholder="Select session type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="one-on-one">One-on-One</SelectItem>
+                      <SelectItem value="group">Group Session</SelectItem>
+                      <SelectItem value="workshop">Workshop</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="startTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Preferred Start Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} className="bg-white border-gray-200" />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Preferred End Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} className="bg-white border-gray-200" />
                   </FormControl>
                   <FormMessage className="text-xs" />
                 </FormItem>
@@ -347,7 +629,9 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
                       .filter((mentor) => mentor.id !== currentUserId)
                       .map((mentor) => (
                         <SelectItem key={mentor.id} value={mentor.id}>
-                          {mentor.name}
+                          {mentor.profile
+                            ? `${mentor.profile.firstName} ${mentor.profile.lastName}`.trim()
+                            : mentor.email}
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -389,147 +673,17 @@ function ApplicationForm({ mentors, onClose }: { mentors: Mentor[]; onClose: () 
   );
 }
 
-function ApplicationDetailsDialog({
-  application,
-  open,
-  onOpenChange,
-}: {
-  application: any;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-purple-800">
-            Application Details
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* Mentor Information */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-1 bg-purple-600 rounded-full" />
-              <h3 className="text-lg font-semibold text-purple-800">Mentor Information</h3>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={application.mentor?.profile?.imageUrl} />
-                <AvatarFallback className="bg-purple-100 text-purple-700">
-                  {`${application.mentor?.profile?.firstName?.[0] || ""}${
-                    application.mentor?.profile?.lastName?.[0] || ""
-                  }`}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">
-                  {`${application.mentor?.profile?.firstName} ${application.mentor?.profile?.lastName}`}
-                </p>
-                <p className="text-sm text-gray-500">{application.mentor?.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Application Status */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-1 bg-purple-600 rounded-full" />
-              <h3 className="text-lg font-semibold text-purple-800">Application Status</h3>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-600">Current Status</p>
-              <Badge
-                className={
-                  application.status === "PENDING"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : application.status === "ACCEPTED"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                }
-              >
-                {application.status}
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-600">
-              {application.status === "PENDING"
-                ? "Your application is being reviewed"
-                : application.status === "ACCEPTED"
-                  ? "Congratulations! Your application has been accepted"
-                  : "Unfortunately, your application was not accepted"}
-            </p>
-          </div>
-
-          {/* Academic Information */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-1 bg-purple-600 rounded-full" />
-              <h3 className="text-lg font-semibold text-purple-800">Academic Information</h3>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <p className="font-medium text-gray-600">Academic Level</p>
-                <p className="text-sm">{application.academicLevel}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-600">Field of Study</p>
-                <p className="text-sm">{application.fieldOfStudy}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-600">Expected Graduation</p>
-                <p className="text-sm">
-                  {format(new Date(application.expectedGraduationDate), "MMM yyyy")}
-                </p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-600">Applied On</p>
-                <p className="text-sm">{format(new Date(application.createdAt), "dd MMM yyyy")}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Career Information */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-1 bg-purple-600 rounded-full" />
-              <h3 className="text-lg font-semibold text-purple-800">Career Information</h3>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <p className="font-medium text-gray-600">Career Goals</p>
-                <p className="text-sm mt-1">{application.careerGoals}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-600">Areas of Interest</p>
-                <p className="text-sm mt-1">{application.areasOfInterest}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Application Message */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-4 w-1 bg-purple-600 rounded-full" />
-              <h3 className="text-lg font-semibold text-purple-800">Your Message</h3>
-            </div>
-            <p className="text-sm whitespace-pre-wrap">{application.message}</p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function MentorsPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isMentor, setIsMentor] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [existingApplication, setExistingApplication] = useState<any>(null);
-  const [showDetails, setShowDetails] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<MentorshipApplication | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -549,32 +703,10 @@ export default function MentorsPage() {
           throw new Error("Failed to fetch mentors");
         }
         const mentorsData = await mentorsResponse.json();
+        console.log("Fetched mentors:", mentorsData);
 
-        console.log("Mentors data:", mentorsData); // Debug log
-
-        if (mentorsData && Array.isArray(mentorsData) && mentorsData.length > 0) {
-          const formattedMentors: Mentor[] = mentorsData.map((mentor: any) => ({
-            id: mentor.id,
-            name: `${mentor.profile?.firstName || ""} ${mentor.profile?.lastName || ""}`.trim(),
-            email: mentor.email,
-            role: mentor.role,
-            profile: mentor.profile,
-            mentorProfile: mentor.mentorProfile,
-          }));
-
-          const validMentors = formattedMentors.filter((mentor) => mentor.name.length > 0);
-          console.log("Formatted mentors:", validMentors); // Debug log
-          setMentors(validMentors);
-        }
-
-        // Fetch existing application
-        const applicationResponse = await fetch("/api/mentorship-sessions/my-applications");
-        if (applicationResponse.ok) {
-          const applications = await applicationResponse.json();
-          if (applications.length > 0) {
-            setExistingApplication(applications[0]); // Get the most recent application
-          }
-        }
+        // Set all mentors without filtering
+        setMentors(mentorsData);
       } catch (error) {
         console.error("Error:", error);
         toast({
@@ -603,6 +735,34 @@ export default function MentorsPage() {
       style.remove();
     };
   }, []);
+
+  const handleViewApplication = async (mentorId: string) => {
+    try {
+      const response = await fetch("/api/mentorship-sessions/my-applications");
+      const applications = await response.json();
+      const application = applications.find(
+        (app: MentorshipApplication) => app.mentor.id === mentorId,
+      );
+
+      if (application) {
+        setSelectedApplication(application);
+        setShowDetails(true);
+      } else {
+        toast({
+          title: "No Application Found",
+          description: "You haven't submitted an application to this mentor yet.",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching application:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load application details",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>
@@ -643,76 +803,6 @@ export default function MentorsPage() {
           </CardContent>
         </Card>
 
-        {existingApplication && (
-          <Card className="bg-white shadow-lg">
-            <CardHeader className="bg-purple-700 text-white rounded-t-lg">
-              <CardTitle className="text-2xl">Your Mentorship Application</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={existingApplication.mentor?.profile?.imageUrl} />
-                    <AvatarFallback className="bg-purple-100 text-purple-700">
-                      {`${existingApplication.mentor?.profile?.firstName?.[0] || ""}${
-                        existingApplication.mentor?.profile?.lastName?.[0] || ""
-                      }`}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">
-                      {`${existingApplication.mentor?.profile?.firstName} ${existingApplication.mentor?.profile?.lastName}`}
-                    </h3>
-                    <p className="text-sm text-gray-500">Your Selected Mentor</p>
-                  </div>
-                </div>
-                <Badge
-                  className={
-                    existingApplication.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : existingApplication.status === "ACCEPTED"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                  }
-                >
-                  {existingApplication.status}
-                </Badge>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="font-medium text-gray-600">Academic Level</p>
-                  <p>{existingApplication.academicLevel}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-600">Field of Study</p>
-                  <p>{existingApplication.fieldOfStudy}</p>
-                </div>
-              </div>
-              <div>
-                <p className="font-medium text-gray-600">Application Status</p>
-                <p className="text-sm mt-1">
-                  {existingApplication.status === "PENDING"
-                    ? "Your application is being reviewed"
-                    : existingApplication.status === "ACCEPTED"
-                      ? "Congratulations! Your application has been accepted"
-                      : "Unfortunately, your application was not accepted"}
-                </p>
-              </div>
-              <Button
-                onClick={() => setShowDetails(true)}
-                className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                View Application Details
-              </Button>
-              <ApplicationDetailsDialog
-                application={existingApplication}
-                open={showDetails}
-                onOpenChange={setShowDetails}
-              />
-            </CardContent>
-          </Card>
-        )}
-
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold text-purple-800">Available Mentors</h2>
           {!isMentor && (
@@ -749,104 +839,128 @@ export default function MentorsPage() {
           </div>
         ) : mentors.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mentors.map((mentor) => (
-              <Card
-                key={mentor.id}
-                className={`bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-                  mentor.id === currentUserId ? "ring-2 ring-purple-500" : ""
-                }`}
-              >
-                <CardHeader className="flex flex-col sm:flex-row items-center gap-4 pb-2">
-                  <Avatar className="w-20 h-20">
-                    {mentor.profile?.imageUrl ? (
-                      <AvatarImage src={mentor.profile.imageUrl} alt={mentor.name} />
-                    ) : (
-                      <AvatarFallback className="bg-purple-200 text-purple-800 text-xl font-bold">
-                        {mentor.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="text-center sm:text-left flex-1">
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <CardTitle className="text-xl text-purple-800">{mentor.name}</CardTitle>
-                      {mentor.id === currentUserId && (
-                        <Badge className="bg-purple-100 text-purple-800">You</Badge>
+            {mentors.map((mentor) => {
+              // Get the full name from profile
+              const fullName = mentor.profile
+                ? `${mentor.profile.firstName} ${mentor.profile.lastName}`.trim()
+                : mentor.email;
+
+              // Get initials for avatar
+              const initials = mentor.profile
+                ? `${mentor.profile.firstName?.[0] || ""}${mentor.profile.lastName?.[0] || ""}`
+                : mentor.email[0];
+
+              return (
+                <Card
+                  key={mentor.id}
+                  className={`bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 ${
+                    mentor.id === currentUserId ? "ring-2 ring-purple-500" : ""
+                  }`}
+                >
+                  <CardHeader className="flex flex-col sm:flex-row items-center gap-4 pb-2">
+                    <Avatar className="w-20 h-20">
+                      {mentor.profile?.imageUrl ? (
+                        <AvatarImage src={mentor.profile.imageUrl} alt={fullName} />
+                      ) : (
+                        <AvatarFallback className="bg-purple-200 text-purple-800 text-xl font-bold">
+                          {initials}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="text-center sm:text-left flex-1">
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <CardTitle className="text-xl text-purple-800">{fullName}</CardTitle>
+                        {mentor.id === currentUserId && (
+                          <Badge className="bg-purple-100 text-purple-800">You</Badge>
+                        )}
+                      </div>
+                      {mentor.profile?.title && (
+                        <p className="text-sm text-gray-600 font-medium">{mentor.profile.title}</p>
+                      )}
+                      {mentor.profile?.company && (
+                        <p className="text-sm text-gray-500">{mentor.profile.company}</p>
+                      )}
+                      {mentor.profile?.city && mentor.profile?.state && (
+                        <p className="text-sm text-gray-500">
+                          {mentor.profile.city}, {mentor.profile.state}
+                        </p>
                       )}
                     </div>
-                    {mentor.profile?.title && (
-                      <p className="text-sm text-gray-600 font-medium">{mentor.profile.title}</p>
-                    )}
-                    {mentor.profile?.company && (
-                      <p className="text-sm text-gray-500">{mentor.profile.company}</p>
-                    )}
-                    {mentor.profile?.city && mentor.profile?.state && (
-                      <p className="text-sm text-gray-500">
-                        {mentor.profile.city}, {mentor.profile.state}
-                      </p>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {mentor.profile?.academicBackground && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-purple-800 mb-1">
-                        Academic Background
-                      </h4>
-                      <p className="text-sm text-gray-700">{mentor.profile.academicBackground}</p>
-                    </div>
-                  )}
-                  {mentor.mentorProfile?.expertise && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-purple-800 mb-2">
-                        Areas of Expertise
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {mentor.mentorProfile.expertise.split(",").map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="bg-purple-100 text-purple-800"
-                          >
-                            {skill.trim()}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {mentor.profile?.skills && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-purple-800 mb-2">Skills</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {mentor.profile.skills.split(",").map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="bg-purple-100 text-purple-800 opacity-80"
-                          >
-                            {skill.trim()}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {mentor.mentorProfile && (
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-2 pt-2 border-t">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {mentor.profile?.academicBackground && (
                       <div>
-                        <span className="font-medium">Experience: </span>
-                        {mentor.mentorProfile.yearsOfExperience} years
+                        <h4 className="text-sm font-semibold text-purple-800 mb-1">
+                          Academic Background
+                        </h4>
+                        <p className="text-sm text-gray-700">{mentor.profile.academicBackground}</p>
                       </div>
+                    )}
+
+                    {!mentor.mentorProfile && (
+                      <div className="text-sm text-gray-500 italic text-center py-2 border rounded-md bg-gray-50">
+                        This mentor hasn't set up their profile yet
+                      </div>
+                    )}
+
+                    {mentor.mentorProfile?.expertise && (
                       <div>
-                        <span className="font-medium">Max Mentees: </span>
-                        {mentor.mentorProfile.maxMentees}
+                        <h4 className="text-sm font-semibold text-purple-800 mb-2">
+                          Areas of Expertise
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {mentor.mentorProfile.expertise.split(",").map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="secondary"
+                              className="bg-purple-100 text-purple-800"
+                            >
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    )}
+                    {mentor.profile?.skills && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-purple-800 mb-2">Skills</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {mentor.profile.skills.split(",").map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="secondary"
+                              className="bg-purple-100 text-purple-800 opacity-80"
+                            >
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {mentor.mentorProfile && (
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-2 pt-2 border-t">
+                        <div>
+                          <span className="font-medium">Experience: </span>
+                          {mentor.mentorProfile.yearsOfExperience} years
+                        </div>
+                        <div>
+                          <span className="font-medium">Max Mentees: </span>
+                          {mentor.mentorProfile.maxMentees}
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={() => handleViewApplication(mentor.id)}
+                      variant="outline"
+                      className="w-full mt-2"
+                    >
+                      View Application
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : !isMentor ? (
           <Card className="bg-white shadow-lg text-center py-10">
@@ -862,25 +976,31 @@ export default function MentorsPage() {
           </Card>
         ) : null}
 
-        {!existingApplication && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => setDialogOpen(true)}
-                className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white mt-4"
-              >
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              onClick={() => setDialogOpen(true)}
+              className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white mt-4"
+            >
+              Apply for Mentorship
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-xl font-semibold text-purple-800">
                 Apply for Mentorship
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
-              <DialogHeader className="pb-4">
-                <DialogTitle className="text-xl font-semibold text-purple-800">
-                  Apply for Mentorship
-                </DialogTitle>
-              </DialogHeader>
-              <ApplicationForm mentors={mentors} onClose={() => setDialogOpen(false)} />
-            </DialogContent>
-          </Dialog>
+              </DialogTitle>
+            </DialogHeader>
+            <ApplicationForm mentors={mentors} onClose={() => setDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
+
+        {selectedApplication && (
+          <ApplicationDetailsDialog
+            application={selectedApplication}
+            open={showDetails}
+            onOpenChange={setShowDetails}
+          />
         )}
       </div>
     </div>

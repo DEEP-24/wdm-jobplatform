@@ -213,19 +213,25 @@ export default function MentorshipApplicationsPage() {
                     <Badge className={statusColors[application.status]}>{application.status}</Badge>
                   </div>
 
-                  <Select
-                    defaultValue={application.status}
-                    onValueChange={(value) => handleStatusChange(application.id, value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Change status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="ACCEPTED">Accept</SelectItem>
-                      <SelectItem value="REJECTED">Reject</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {application.status === "PENDING" ? (
+                    <Select
+                      defaultValue={application.status}
+                      onValueChange={(value) => handleStatusChange(application.id, value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Change status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="ACCEPTED">Accept</SelectItem>
+                        <SelectItem value="REJECTED">Reject</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic text-center py-2 border rounded-md bg-gray-50">
+                      Status cannot be modified after {application.status.toLowerCase()}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -81,25 +81,6 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const cookieStore = cookies();
-    const authToken = cookieStore.get("auth-token");
-
-    if (!authToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const tokenData = JSON.parse(authToken.value);
-
-    // Get current user
-    const currentUser = await db.user.findUnique({
-      where: { email: tokenData.email },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Simply fetch all users with role MENTOR
     const mentors = await db.user.findMany({
       where: {
         role: "MENTOR",
@@ -109,6 +90,8 @@ export async function GET() {
         mentorProfile: true,
       },
     });
+
+    console.log("Found mentors:", mentors); // Debug log
 
     return NextResponse.json(mentors);
   } catch (error) {

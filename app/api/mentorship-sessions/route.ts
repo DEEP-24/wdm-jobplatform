@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    // Check authentication using cookies
     const cookieStore = cookies();
     const authToken = cookieStore.get("auth-token");
 
@@ -14,11 +13,9 @@ export async function POST(req: Request) {
 
     const tokenData = JSON.parse(authToken.value);
 
-    // Get user from database
+    // Get user
     const user = await db.user.findUnique({
-      where: {
-        email: tokenData.email,
-      },
+      where: { email: tokenData.email },
     });
 
     if (!user) {
@@ -28,6 +25,10 @@ export async function POST(req: Request) {
     const {
       mentorId,
       message,
+      sessionDate,
+      startTime,
+      endTime,
+      sessionType,
       academicLevel,
       fieldOfStudy,
       careerGoals,
@@ -35,16 +36,8 @@ export async function POST(req: Request) {
       expectedGraduationDate,
     } = await req.json();
 
-    // Check if user is trying to select themselves as mentor
-    if (mentorId === user.id) {
-      return NextResponse.json(
-        { error: "You cannot select yourself as a mentor" },
-        { status: 400 },
-      );
-    }
-
-    // Verify that the selected mentor exists and is actually a mentor
-    const mentor = await db.user.findUnique({
+    // Basic mentor check - only verify the mentor exists and has MENTOR role
+    const mentor = await db.user.findFirst({
       where: {
         id: mentorId,
         role: "MENTOR",
@@ -52,20 +45,45 @@ export async function POST(req: Request) {
     });
 
     if (!mentor) {
-      return NextResponse.json({ error: "Selected mentor is not valid" }, { status: 400 });
+      return NextResponse.json({ error: "Mentor not found" }, { status: 404 });
     }
 
+    // Only check for existing applications with the same mentor
+    const existingMentorship = await db.mentorshipSession.findFirst({
+      where: {
+        menteeId: user.id,
+        mentorId: mentorId,
+        status: {
+          in: ["PENDING", "ACCEPTED"], // Only check PENDING and ACCEPTED status
+        },
+      },
+    });
+
+    if (existingMentorship) {
+      const status =
+        existingMentorship.status === "PENDING" ? "a pending application" : "an active mentorship";
+      return NextResponse.json(
+        { error: `You already have ${status} with this mentor` },
+        { status: 400 },
+      );
+    }
+
+    // Create the mentorship session
     const mentorshipSession = await db.mentorshipSession.create({
       data: {
         mentorId,
         menteeId: user.id,
         message,
+        sessionDate: sessionDate ? new Date(sessionDate) : null,
+        startTime: startTime ? new Date(startTime) : null,
+        endTime: endTime ? new Date(endTime) : null,
+        sessionType,
+        status: "PENDING",
         academicLevel,
         fieldOfStudy,
         careerGoals,
         areasOfInterest,
         expectedGraduationDate: new Date(expectedGraduationDate),
-        status: "PENDING",
       },
     });
 
@@ -87,31 +105,30 @@ export async function GET() {
 
     const tokenData = JSON.parse(authToken.value);
 
-    // Get user and verify they are a mentor
+    // Get user
     const user = await db.user.findUnique({
       where: { email: tokenData.email },
     });
 
-    if (!user || user.role !== "MENTOR") {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch applications for this mentor
-    const applications = await db.mentorshipSession.findMany({
+    // Get all mentorship sessions where the user is either mentor or mentee
+    const mentorshipSessions = await db.mentorshipSession.findMany({
       where: {
-        mentorId: user.id,
+        OR: [{ mentorId: user.id }, { menteeId: user.id }],
       },
       include: {
+        mentor: {
+          include: {
+            profile: true,
+            mentorProfile: true,
+          },
+        },
         mentee: {
-          select: {
-            id: true,
-            email: true,
-            profile: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
+          include: {
+            profile: true,
           },
         },
       },
@@ -120,7 +137,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(applications);
+    return NextResponse.json(mentorshipSessions);
   } catch (error) {
     console.error("Error fetching mentorship sessions:", error);
     return NextResponse.json({ error: "Failed to fetch mentorship sessions" }, { status: 500 });
