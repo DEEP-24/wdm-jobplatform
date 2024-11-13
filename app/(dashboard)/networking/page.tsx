@@ -42,6 +42,7 @@ type User = {
   } | null;
   following?: User[];
   followers?: User[];
+  isFollowingMe?: boolean;
 };
 
 export default function AcademicNetworkPage() {
@@ -79,10 +80,21 @@ export default function AcademicNetworkPage() {
           throw new Error("Failed to fetch users data");
         }
 
-        // Filter out the current user
-        const filteredUsers = usersData.users.filter(
-          (user: User) => user.id !== currentUserData.user.id,
-        );
+        // Get followers
+        const followersResponse = await fetch("/api/users/followers");
+        const followersData = await followersResponse.json();
+
+        const followerIds =
+          followersData.followers?.map((follow: { followerId: string }) => follow.followerId) || [];
+
+        // Filter out the current user and add isFollowingMe flag
+        const filteredUsers = usersData.users
+          .filter((user: User) => user.id !== currentUserData.user.id)
+          .map((user: User) => ({
+            ...user,
+            isFollowingMe: followerIds.includes(user.id),
+          }));
+
         setUsers(filteredUsers);
 
         // Get following ids
@@ -349,6 +361,9 @@ export default function AcademicNetworkPage() {
                                 : user.email}
                             </h3>
                             <p className="text-sm text-gray-600">{user.email}</p>
+                            {user.isFollowingMe && (
+                              <p className="text-sm text-purple-600 mt-1">Following you</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex space-x-2">
