@@ -14,6 +14,7 @@ interface Message {
   senderId: string;
   receiverId: string;
   sentAt: string;
+  read: boolean;
   sender: {
     email: string;
     profile: {
@@ -30,7 +31,7 @@ interface ChatUser {
     firstName: string;
     lastName: string;
   } | null;
-  lastMessage: Message;
+  lastMessage?: Message;
 }
 
 export default function ChatPage() {
@@ -47,7 +48,7 @@ export default function ChatPage() {
         const data = await response.json();
         if (data.authenticated) {
           setCurrentUser(data.user);
-          await fetchChatUsers();
+          await fetchFollowedUsers();
         }
       } catch (error) {
         console.error("Error fetching current user:", error);
@@ -64,18 +65,21 @@ export default function ChatPage() {
     fetchCurrentUser();
   }, [toast]);
 
-  const fetchChatUsers = async () => {
+  const fetchFollowedUsers = async () => {
     try {
-      const response = await fetch("/api/messages/users");
+      const response = await fetch("/api/users/following");
       const data = await response.json();
-      setChatUsers(data);
+      console.log("Following users response:", data);
+
+      setChatUsers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching chat users:", error);
+      console.error("Error fetching followed users:", error);
       toast({
         title: "Error",
-        description: "Failed to load chat users",
+        description: "Failed to load followed users",
         variant: "destructive",
       });
+      setChatUsers([]);
     }
   };
 
@@ -93,8 +97,37 @@ export default function ChatPage() {
     return user.email;
   };
 
-  const handleUserSelect = (user: ChatUser) => {
+  const handleUserSelect = async (user: ChatUser) => {
     setSelectedUser(user);
+
+    if (
+      user.lastMessage &&
+      !user.lastMessage.read &&
+      user.lastMessage.receiverId === currentUser?.id
+    ) {
+      try {
+        await fetch(`/api/messages/${user.lastMessage.id}/read`, {
+          method: "PUT",
+        });
+
+        setChatUsers((prevUsers) =>
+          prevUsers.map((u) => {
+            if (u.id === user.id && u.lastMessage) {
+              return {
+                ...u,
+                lastMessage: {
+                  ...u.lastMessage,
+                  read: true,
+                },
+              };
+            }
+            return u;
+          }),
+        );
+      } catch (error) {
+        console.error("Error marking message as read:", error);
+      }
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent, user: ChatUser) => {
@@ -122,8 +155,8 @@ export default function ChatPage() {
             {/* Users List */}
             <ScrollArea className="h-[calc(100vh-200px)]">
               <div className="p-4 space-y-2">
-                {chatUsers.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">No messages yet</p>
+                {!Array.isArray(chatUsers) || chatUsers.length === 0 ? (
+                  <p className="text-center text-gray-500 py-4">No followed users yet</p>
                 ) : (
                   chatUsers.map((user) => (
                     <div
@@ -150,7 +183,14 @@ export default function ChatPage() {
                         <p className="font-medium text-gray-900 truncate">{getUserName(user)}</p>
                         {user.lastMessage && (
                           <>
-                            <p className="text-sm text-gray-500 truncate">
+                            <p
+                              className={`text-sm truncate ${
+                                !user.lastMessage.read &&
+                                user.lastMessage.receiverId === currentUser?.id
+                                  ? "text-purple-700 font-semibold"
+                                  : "text-gray-500"
+                              }`}
+                            >
                               {user.lastMessage.content}
                             </p>
                             <p className="text-xs text-gray-400">
@@ -161,6 +201,11 @@ export default function ChatPage() {
                           </>
                         )}
                       </div>
+                      {user.lastMessage &&
+                        !user.lastMessage.read &&
+                        user.lastMessage.receiverId === currentUser?.id && (
+                          <div className="w-2 h-2 bg-purple-600 rounded-full" />
+                        )}
                     </div>
                   ))
                 )}
@@ -168,18 +213,20 @@ export default function ChatPage() {
             </ScrollArea>
 
             {/* Chat Area */}
-            <div className="h-[calc(100vh-200px)] relative bg-gray-50">
+            <div className="h-[calc(100vh-200px)] bg-gray-50">
               {selectedUser ? (
                 <ChatComponent
                   recipientId={selectedUser.id}
                   recipientName={getUserName(selectedUser)}
+                  recipientEmail={selectedUser.email}
+                  recipientProfile={selectedUser.profile}
                   currentUserId={currentUser?.id}
                   isOpen={true}
                   onClose={() => setSelectedUser(null)}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
-                  Select a conversation to start messaging
+                  Select a user to start messaging
                 </div>
               )}
             </div>

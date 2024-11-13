@@ -67,7 +67,7 @@ const navItems = [
     roles: ["ADMIN", "USER", "MENTOR", "EMPLOYER", "ORGANIZER"],
   },
   {
-    name: "Messages",
+    name: "Chat",
     icon: MessageSquare,
     href: "/chat",
     roles: ["ADMIN", "USER", "MENTOR", "EMPLOYER", "ORGANIZER"],
@@ -313,6 +313,10 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
                   align="end"
                   className="w-56 mt-2 p-2 rounded-md shadow-lg bg-white"
                 >
+                  <div className="px-3 py-2 border-b border-gray-100 mb-2">
+                    <p className="text-sm font-medium text-gray-900">{user.email}</p>
+                    <p className="text-xs text-gray-500 capitalize">{user.role.toLowerCase()}</p>
+                  </div>
                   <DropdownMenuItem asChild>
                     <Link
                       href="/profile"

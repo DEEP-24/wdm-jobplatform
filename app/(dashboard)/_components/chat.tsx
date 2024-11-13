@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { disconnectSocket, getSocket, initializeSocket } from "@/lib/socket";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Message {
   id: string;
@@ -26,6 +27,11 @@ interface Message {
 interface ChatComponentProps {
   recipientId: string;
   recipientName: string;
+  recipientEmail: string;
+  recipientProfile: {
+    firstName: string;
+    lastName: string;
+  } | null;
   currentUserId?: string;
   isOpen: boolean;
   onClose: () => void;
@@ -34,9 +40,9 @@ interface ChatComponentProps {
 export default function ChatComponent({
   recipientId,
   recipientName,
+  recipientEmail,
   currentUserId,
   isOpen,
-  onClose,
 }: ChatComponentProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -144,57 +150,63 @@ export default function ChatComponent({
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 h-96 shadow-lg">
-      <CardHeader className="p-4 border-b">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-semibold">{recipientName}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b bg-white">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${recipientName}`} />
+            <AvatarFallback className="bg-purple-200 text-purple-800">
+              {recipientName
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold">{recipientName}</h2>
+            <div className="text-sm text-gray-500">{recipientEmail}</div>
+          </div>
+        </div>
+      </div>
+      <ScrollArea className="flex-1 p-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`mb-4 ${message.senderId === currentUserId ? "text-right" : "text-left"}`}
+          >
+            <div
+              className={`inline-block p-2 rounded-lg ${
+                message.senderId === currentUserId
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-200 text-gray-900"
+              }`}
+            >
+              {message.content}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {new Date(message.sentAt).toLocaleTimeString()}
+            </div>
+          </div>
+        ))}
+      </ScrollArea>
+      <form onSubmit={sendMessage} className="p-4 border-t bg-white">
+        <div className="flex gap-2">
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1"
+            disabled={!isConnected || isLoading}
+          />
+          <Button
+            type="submit"
+            disabled={!newMessage.trim() || !isConnected || isLoading}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            {isLoading ? "..." : "Send"}
           </Button>
         </div>
-        {!isConnected && <div className="text-xs text-red-500">Connecting to chat server...</div>}
-      </CardHeader>
-      <CardContent className="p-0 flex flex-col h-[calc(100%-4rem)]">
-        <ScrollArea ref={scrollRef} className="flex-1 p-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`mb-4 ${message.senderId === currentUserId ? "text-right" : "text-left"}`}
-            >
-              <div
-                className={`inline-block p-2 rounded-lg ${
-                  message.senderId === currentUserId
-                    ? "bg-purple-600 text-white"
-                    : "bg-gray-200 text-gray-900"
-                }`}
-              >
-                {message.content}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {new Date(message.sentAt).toLocaleTimeString()}
-              </div>
-            </div>
-          ))}
-        </ScrollArea>
-        <form onSubmit={sendMessage} className="p-4 border-t">
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1"
-              disabled={!isConnected || isLoading}
-            />
-            <Button
-              type="submit"
-              disabled={!newMessage.trim() || !isConnected || isLoading}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isLoading ? "..." : "Send"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      </form>
+    </div>
   );
 }

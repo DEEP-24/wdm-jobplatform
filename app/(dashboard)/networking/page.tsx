@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { MessageSquareIcon, Network, UserMinus, UserPlus, Users } from "lucide-react";
 import { Poppins } from "next/font/google";
-import { UserPlus, UserMinus, MessageSquare, Users, Network } from "lucide-react";
-import ChatComponent from "@/app/(dashboard)/_components/chat";
+import { useEffect, useMemo, useState } from "react";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -51,8 +50,6 @@ export default function AcademicNetworkPage() {
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  const [chatWithUser, setChatWithUser] = useState<{ id: string; name: string } | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -251,14 +248,6 @@ export default function AcademicNetworkPage() {
     });
   }, [searchTerm, users]);
 
-  const handleChatClick = (user: User) => {
-    const userName = user.profile
-      ? `${user.profile.firstName} ${user.profile.lastName}`
-      : user.email;
-    setChatWithUser({ id: user.id, name: userName });
-    setIsChatOpen(true);
-  };
-
   return (
     <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -278,7 +267,7 @@ export default function AcademicNetworkPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <section className="space-y-4">
                 <h2 className="text-2xl font-semibold text-purple-800 flex items-center">
-                  <MessageSquare className="mr-2" /> Public Forums
+                  <MessageSquareIcon className="mr-2" /> Public Forums
                 </h2>
                 <div className="overflow-y-auto max-h-[calc(100vh-300px)] pr-4">
                   {filteredForums.map((topic) => (
@@ -368,22 +357,13 @@ export default function AcademicNetworkPage() {
                         </div>
                         <div className="flex space-x-2">
                           {followingIds.includes(user.id) ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                className="flex-1 border-purple-600 text-purple-600 hover:bg-purple-50"
-                                onClick={() => handleUnfollow(user)}
-                              >
-                                <UserMinus className="mr-2 h-4 w-4" /> Unfollow
-                              </Button>
-                              <Button
-                                variant="default"
-                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                                onClick={() => handleChatClick(user)}
-                              >
-                                <MessageSquare className="mr-2 h-4 w-4" /> Chat
-                              </Button>
-                            </>
+                            <Button
+                              variant="outline"
+                              className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
+                              onClick={() => handleUnfollow(user)}
+                            >
+                              <UserMinus className="mr-2 h-4 w-4" /> Unfollow
+                            </Button>
                           ) : (
                             <Button
                               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
@@ -405,18 +385,6 @@ export default function AcademicNetworkPage() {
           </CardContent>
         </Card>
       </div>
-      {chatWithUser && (
-        <ChatComponent
-          recipientId={chatWithUser.id}
-          recipientName={chatWithUser.name}
-          isOpen={isChatOpen}
-          onClose={() => {
-            setIsChatOpen(false);
-            setChatWithUser(null);
-          }}
-          currentUserId={currentUser?.id}
-        />
-      )}
     </div>
   );
 }
