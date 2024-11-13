@@ -4,6 +4,7 @@ import { PrismaClient, UserRole, EventType } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.message.deleteMany();
   await prisma.mentorshipSession.deleteMany();
   await prisma.savedJob.deleteMany();
   await prisma.jobApplication.deleteMany();
@@ -13,7 +14,7 @@ async function main() {
   await prisma.eventSession.deleteMany();
   await prisma.event.deleteMany();
   await prisma.resource.deleteMany();
-  await prisma.follower.deleteMany();
+  await prisma.followers.deleteMany();
   await prisma.mentorProfile.deleteMany();
   await prisma.menteeProfile.deleteMany();
   await prisma.mentorshipProgram.deleteMany();

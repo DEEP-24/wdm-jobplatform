@@ -1,45 +1,45 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { cookies } from "next/headers";
 
 export async function POST(_request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const authToken = cookieStore.get("auth-token");
-
-  if (!authToken) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   try {
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("auth-token");
+
+    if (!authToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const tokenData = JSON.parse(authToken.value);
     const followerId = tokenData.id;
     const followingId = params.id;
 
     // Check if already following
-    const existingFollow = await db.follower.findUnique({
+    const existingFollow = await db.followers.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId,
+          followerId: followerId,
+          followingId: followingId,
         },
       },
     });
 
     if (existingFollow) {
-      return new NextResponse("Already following this user", { status: 400 });
+      return NextResponse.json({ error: "Already following this user" }, { status: 400 });
     }
 
     // Create new follow relationship
-    await db.follower.create({
+    await db.followers.create({
       data: {
         followerId,
         followingId,
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "Successfully followed user" }, { status: 200 });
   } catch (error) {
     console.error("Follow error:", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json({ error: "Failed to follow user" }, { status: 500 });
   }
 }

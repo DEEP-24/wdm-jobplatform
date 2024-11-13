@@ -1,32 +1,47 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { cookies } from "next/headers";
 
 export async function POST(_request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const authToken = cookieStore.get("auth-token");
-
-  if (!authToken) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   try {
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("auth-token");
+
+    if (!authToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const tokenData = JSON.parse(authToken.value);
     const followerId = tokenData.id;
     const followingId = params.id;
 
-    await db.follower.delete({
+    // Check if follow relationship exists
+    const existingFollow = await db.followers.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId,
+          followerId: followerId,
+          followingId: followingId,
         },
       },
     });
 
-    return NextResponse.json({ success: true });
+    if (!existingFollow) {
+      return NextResponse.json({ error: "Not following this user" }, { status: 400 });
+    }
+
+    // Delete follow relationship
+    await db.followers.delete({
+      where: {
+        followerId_followingId: {
+          followerId: followerId,
+          followingId: followingId,
+        },
+      },
+    });
+
+    return NextResponse.json({ message: "Successfully unfollowed user" }, { status: 200 });
   } catch (error) {
     console.error("Unfollow error:", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json({ error: "Failed to unfollow user" }, { status: 500 });
   }
 }

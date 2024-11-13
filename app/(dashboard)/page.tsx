@@ -1,6 +1,5 @@
 "use client";
 
-import ChatComponent from "@/app/(dashboard)/_components/chat";
 import type { User } from "@/app/types/user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -655,8 +654,6 @@ export default function HomePage() {
           onClose={() => setIsScheduleModalOpen(false)}
         />
       )}
-
-      <ChatComponent />
     </div>
   );
 }

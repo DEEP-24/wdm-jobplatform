@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Poppins } from "next/font/google";
 import { UserPlus, UserMinus, MessageSquare, Users, Network } from "lucide-react";
+import ChatComponent from "@/app/(dashboard)/_components/chat";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -49,6 +50,8 @@ export default function AcademicNetworkPage() {
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const [chatWithUser, setChatWithUser] = useState<{ id: string; name: string } | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -71,17 +74,31 @@ export default function AcademicNetworkPage() {
         // Get all users except current user
         const usersResponse = await fetch("/api/users");
         const usersData = await usersResponse.json();
-        setUsers(usersData.filter((user: User) => user.id !== currentUserData.user.id));
+
+        if (!usersData.users) {
+          throw new Error("Failed to fetch users data");
+        }
+
+        // Filter out the current user
+        const filteredUsers = usersData.users.filter(
+          (user: User) => user.id !== currentUserData.user.id,
+        );
+        setUsers(filteredUsers);
 
         // Get following ids
         const followingResponse = await fetch("/api/users/following");
         const followingData = await followingResponse.json();
-        setFollowingIds(followingData.map((follow: { followingId: string }) => follow.followingId));
+
+        if (followingData.following) {
+          setFollowingIds(
+            followingData.following.map((follow: { followingId: string }) => follow.followingId),
+          );
+        }
       } catch (err: unknown) {
-        console.error(err);
+        console.error("Error fetching users:", err);
         toast({
           title: "Error",
-          description: "Failed to load users",
+          description: "Failed to load users. Please try again later.",
           variant: "destructive",
         });
       }
@@ -103,13 +120,25 @@ export default function AcademicNetworkPage() {
     try {
       const response = await fetch(`/api/users/${userToFollow.id}/follow`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ followerId: currentUser.id }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to follow user");
+        // Handle non-JSON errors
+        const text = await response.text();
+        try {
+          const error = JSON.parse(text);
+          throw new Error(error.message || "Failed to follow user");
+        } catch (_e) {
+          throw new Error(text || "Failed to follow user");
+        }
       }
 
-      setFollowingIds([...followingIds, userToFollow.id]);
+      // Update local state
+      setFollowingIds((prev) => [...prev, userToFollow.id]);
 
       const name = userToFollow.profile
         ? `${userToFollow.profile.firstName} ${userToFollow.profile.lastName}`
@@ -123,7 +152,7 @@ export default function AcademicNetworkPage() {
       console.error(err);
       toast({
         title: "Error",
-        description: "Failed to follow user",
+        description: err instanceof Error ? err.message : "Failed to follow user",
         variant: "destructive",
       });
     }
@@ -142,13 +171,25 @@ export default function AcademicNetworkPage() {
     try {
       const response = await fetch(`/api/users/${userToUnfollow.id}/unfollow`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ followerId: currentUser.id }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to unfollow user");
+        // Handle non-JSON errors
+        const text = await response.text();
+        try {
+          const error = JSON.parse(text);
+          throw new Error(error.message || "Failed to unfollow user");
+        } catch (_e) {
+          throw new Error(text || "Failed to unfollow user");
+        }
       }
 
-      setFollowingIds(followingIds.filter((id) => id !== userToUnfollow.id));
+      // Update local state
+      setFollowingIds((prev) => prev.filter((id) => id !== userToUnfollow.id));
 
       const name = userToUnfollow.profile
         ? `${userToUnfollow.profile.firstName} ${userToUnfollow.profile.lastName}`
@@ -162,7 +203,7 @@ export default function AcademicNetworkPage() {
       console.error(err);
       toast({
         title: "Error",
-        description: "Failed to unfollow user",
+        description: err instanceof Error ? err.message : "Failed to unfollow user",
         variant: "destructive",
       });
     }
@@ -197,6 +238,14 @@ export default function AcademicNetworkPage() {
       );
     });
   }, [searchTerm, users]);
+
+  const handleChatClick = (user: User) => {
+    const userName = user.profile
+      ? `${user.profile.firstName} ${user.profile.lastName}`
+      : user.email;
+    setChatWithUser({ id: user.id, name: userName });
+    setIsChatOpen(true);
+  };
 
   return (
     <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>
@@ -302,22 +351,33 @@ export default function AcademicNetworkPage() {
                             <p className="text-sm text-gray-600">{user.email}</p>
                           </div>
                         </div>
-                        {followingIds.includes(user.id) ? (
-                          <Button
-                            variant="outline"
-                            className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
-                            onClick={() => handleUnfollow(user)}
-                          >
-                            <UserMinus className="mr-2 h-4 w-4" /> Unfollow
-                          </Button>
-                        ) : (
-                          <Button
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                            onClick={() => handleFollow(user)}
-                          >
-                            <UserPlus className="mr-2 h-4 w-4" /> Follow
-                          </Button>
-                        )}
+                        <div className="flex space-x-2">
+                          {followingIds.includes(user.id) ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                className="flex-1 border-purple-600 text-purple-600 hover:bg-purple-50"
+                                onClick={() => handleUnfollow(user)}
+                              >
+                                <UserMinus className="mr-2 h-4 w-4" /> Unfollow
+                              </Button>
+                              <Button
+                                variant="default"
+                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                                onClick={() => handleChatClick(user)}
+                              >
+                                <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                              onClick={() => handleFollow(user)}
+                            >
+                              <UserPlus className="mr-2 h-4 w-4" /> Follow
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -330,6 +390,18 @@ export default function AcademicNetworkPage() {
           </CardContent>
         </Card>
       </div>
+      {chatWithUser && (
+        <ChatComponent
+          recipientId={chatWithUser.id}
+          recipientName={chatWithUser.name}
+          isOpen={isChatOpen}
+          onClose={() => {
+            setIsChatOpen(false);
+            setChatWithUser(null);
+          }}
+          currentUserId={currentUser?.id}
+        />
+      )}
     </div>
   );
 }

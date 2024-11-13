@@ -23,6 +23,7 @@ import {
   UserPenIcon,
   Users2Icon,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { Poppins, Roboto } from "next/font/google";
 import Link from "next/link";
@@ -43,6 +44,8 @@ const poppins = Poppins({
   display: "swap",
 });
 
+const MAX_VISIBLE_LINKS = 6;
+
 const navItems = [
   { name: "Home", icon: HomeIcon, href: "/", roles: ["ADMIN", "USER", "MENTOR"] },
   {
@@ -61,7 +64,13 @@ const navItems = [
     name: "Networking",
     icon: Users2Icon,
     href: "/networking",
-    roles: ["ADMIN", "USER", "MENTOR"],
+    roles: ["ADMIN", "USER", "MENTOR", "EMPLOYER", "ORGANIZER"],
+  },
+  {
+    name: "Messages",
+    icon: MessageSquare,
+    href: "/chat",
+    roles: ["ADMIN", "USER", "MENTOR", "EMPLOYER", "ORGANIZER"],
   },
   {
     name: "Reservations",
@@ -106,7 +115,50 @@ const navItems = [
     href: "/mentorship-applications",
     roles: ["ADMIN", "MENTOR"],
   },
+  {
+    name: "Add Resource",
+    icon: PlusIcon,
+    href: "/add-resource",
+    roles: ["ADMIN"],
+  },
 ];
+
+const NavLinksDropdown = ({ items, pathname }: { items: typeof navItems; pathname: string }) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="text-purple-100 hover:bg-purple-600 transition-colors duration-150 flex items-center"
+        >
+          <span className="mr-1">More</span>
+          <Menu className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-56 mt-2 p-2 rounded-md shadow-lg bg-white max-h-[calc(100vh-100px)] overflow-y-auto"
+        sideOffset={5}
+      >
+        {items.map((item) => (
+          <DropdownMenuItem key={item.name} asChild>
+            <Link
+              href={item.href}
+              className={`flex items-center px-3 py-2 text-sm transition-colors duration-150 rounded-md w-full ${
+                pathname === item.href
+                  ? "bg-purple-100 text-purple-700"
+                  : "text-gray-700 hover:bg-purple-50"
+              }`}
+            >
+              <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{item.name}</span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 interface ModernLayoutProps {
   children: React.ReactNode;
@@ -208,22 +260,34 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
             </Link>
             <nav className="hidden lg:flex items-center space-x-1">
               {user &&
-                navItems
-                  .filter((item) => item.roles.includes(user.role))
-                  .map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
-                        pathname === item.href
-                          ? "bg-purple-800 text-white"
-                          : "text-purple-100 hover:bg-purple-600"
-                      }`}
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  ))}
+                (() => {
+                  const filteredItems = navItems.filter((item) => item.roles.includes(user.role));
+
+                  const visibleItems = filteredItems.slice(0, MAX_VISIBLE_LINKS);
+                  const dropdownItems = filteredItems.slice(MAX_VISIBLE_LINKS);
+
+                  return (
+                    <>
+                      {visibleItems.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
+                            pathname === item.href
+                              ? "bg-purple-800 text-white"
+                              : "text-purple-100 hover:bg-purple-600"
+                          }`}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      ))}
+                      {dropdownItems.length > 0 && (
+                        <NavLinksDropdown items={dropdownItems} pathname={pathname} />
+                      )}
+                    </>
+                  );
+                })()}
             </nav>
             <div className="flex items-center space-x-2">
               {user.role === UserRole.USER && !isMentor && (
@@ -322,28 +386,17 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-3 py-2 rounded-md text-lg font-medium transition-colors duration-150 ${
+                    className={`flex items-center px-3 py-2 rounded-md text-lg font-medium transition-colors duration-150 mb-2 ${
                       pathname === item.href
                         ? "bg-purple-800 text-white"
                         : "text-purple-100 hover:bg-purple-600"
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.name}
+                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
                   </Link>
                 ))}
-
-            {user.role === UserRole.USER && !isMentor && (
-              <Link
-                href="/become-a-mentor"
-                className={`flex items-center px-3 py-2 mt-4 rounded-md text-lg font-medium bg-purple-500 text-white hover:bg-purple-400 transition-colors duration-150 shadow-md ${poppins.className}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Users2Icon className="mr-3 h-5 w-5" />
-                Become a Mentor
-              </Link>
-            )}
           </nav>
           <div className="p-4 border-t border-purple-600">
             <Button

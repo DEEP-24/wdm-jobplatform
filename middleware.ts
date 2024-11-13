@@ -27,6 +27,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Allow socket.io connections
+  if (request.nextUrl.pathname.startsWith("/api/socket")) {
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 

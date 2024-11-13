@@ -1,24 +1,51 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import type { UserRole } from "@prisma/client";
+import { formatDistanceToNow } from "date-fns";
 import {
+  BookOpenIcon,
+  ChevronRight,
+  ExternalLink,
   FileIcon,
   FileTextIcon,
   ImageIcon,
-  VideoIcon,
-  BookOpenIcon,
+  Pencil,
+  Trash2,
   UserCircle,
-  ChevronRight,
+  VideoIcon,
+  Plus,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { Poppins } from "next/font/google";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 const poppins = Poppins({
   weight: ["400", "600", "700"],
@@ -35,43 +62,21 @@ interface Application {
   submittedAt: string;
 }
 
-const resourcesData = [
-  {
-    id: "1",
-    title: "Introduction to React",
-    description: "A comprehensive guide to getting started with React",
-    type: "PDF",
-    tags: ["React", "Frontend", "JavaScript"],
-  },
-  {
-    id: "2",
-    title: "CSS Grid Layout Tutorial",
-    description: "Learn how to create responsive layouts with CSS Grid",
-    type: "Video",
-    tags: ["CSS", "Web Design", "Responsive"],
-  },
-  {
-    id: "3",
-    title: "JavaScript ES6 Cheat Sheet",
-    description: "Quick reference for ES6 features and syntax",
-    type: "PDF",
-    tags: ["JavaScript", "ES6", "Cheat Sheet"],
-  },
-  {
-    id: "4",
-    title: "UI/UX Design Principles",
-    description: "Key principles for creating effective user interfaces",
-    type: "Image",
-    tags: ["UI/UX", "Design", "Infographic"],
-  },
-  {
-    id: "5",
-    title: "Git Version Control Basics",
-    description: "Understanding the fundamentals of Git for version control",
-    type: "Text",
-    tags: ["Git", "Version Control", "DevOps"],
-  },
-];
+interface Resource {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string | null;
+  url: string;
+  tags: string | null;
+  user: {
+    email: string;
+    profile: {
+      firstName: string | null;
+      lastName: string | null;
+    } | null;
+  };
+}
 
 const getFileIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -81,14 +86,30 @@ const getFileIcon = (type: string) => {
       return <VideoIcon className="h-4 w-4 text-blue-500" />;
     case "image":
       return <ImageIcon className="h-4 w-4 text-green-500" />;
+    case "article":
+      return <FileTextIcon className="h-4 w-4 text-purple-500" />;
     default:
       return <FileTextIcon className="h-4 w-4 text-gray-500" />;
   }
 };
 
 export default function IntegratedCareerDevelopment() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: UserRole } | null>(null);
+  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [mentors, setMentors] = useState<Record<string, any>>({});
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [isLoadingResources, setIsLoadingResources] = useState(true);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    description: "",
+    type: "",
+    url: "",
+    tags: "",
+  });
 
   useEffect(() => {
     const storedApplications = JSON.parse(localStorage.getItem("mentorshipApplications") || "[]");
@@ -101,6 +122,193 @@ export default function IntegratedCareerDevelopment() {
     }, {});
     setMentors(mentorsMap);
   }, []);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await fetch("/api/resources");
+        if (!response.ok) {
+          throw new Error("Failed to fetch resources");
+        }
+        const data = await response.json();
+        setResources(data);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      } finally {
+        setIsLoadingResources(false);
+      }
+    };
+
+    fetchResources();
+  }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/check");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated && data.user) {
+            setCurrentUser({
+              id: data.user.id,
+              role: data.user.role,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleEdit = async (resourceId: string) => {
+    try {
+      const response = await fetch(`/api/resources/${resourceId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editFormData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update resource");
+      }
+
+      // Update the resources list with edited data
+      setResources((prev) =>
+        prev.map((resource) =>
+          resource.id === resourceId
+            ? {
+                ...resource,
+                ...editFormData,
+              }
+            : resource,
+        ),
+      );
+
+      toast({
+        title: "Success",
+        description: "Resource updated successfully",
+      });
+      setResourceToEdit(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update resource",
+        variant: "destructive",
+      });
+      console.error("Error updating resource:", error);
+    }
+  };
+
+  const handleDelete = async (resourceId: string) => {
+    try {
+      const response = await fetch(`/api/resources/${resourceId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete resource");
+      }
+
+      setResources((prev) => prev.filter((resource) => resource.id !== resourceId));
+      toast({
+        title: "Success",
+        description: "Resource deleted successfully",
+      });
+      setResourceToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete resource",
+        variant: "destructive",
+      });
+      console.error("Error deleting resource:", error);
+    }
+  };
+
+  const renderResourceCard = (resource: Resource) => (
+    <Card key={resource.id} className="hover:bg-purple-50 transition-colors duration-200">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start space-x-3 sm:space-x-4">
+          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-100 flex-shrink-0">
+            {getFileIcon(resource.type || "default")}
+          </div>
+          <div className="flex-grow min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1 sm:mb-2">
+              <h3 className="text-sm sm:text-base font-semibold text-purple-800 truncate">
+                {resource.title}
+              </h3>
+              <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full mt-1 sm:mt-0">
+                {resource.type || "Other"}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">
+              {resource.description}
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-1 sm:gap-2">
+                {resource.tags?.split(",").map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-purple-100 text-purple-800 hover:bg-purple-200 text-xs px-1 py-0 sm:px-2 sm:py-1"
+                  >
+                    {tag.trim()}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-purple-600 hover:text-purple-700"
+                  onClick={() => window.open(resource.url, "_blank")}
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Visit
+                </Button>
+                {currentUser?.role === "ADMIN" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-600 hover:text-blue-700"
+                      onClick={() => {
+                        setResourceToEdit(resource);
+                        setEditFormData({
+                          title: resource.title,
+                          description: resource.description || "",
+                          type: resource.type || "",
+                          url: resource.url,
+                          tags: resource.tags || "",
+                        });
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => setResourceToDelete(resource.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div
@@ -200,56 +408,61 @@ export default function IntegratedCareerDevelopment() {
           <TabsContent value="resources">
             <Card className="bg-white shadow-xl rounded-lg overflow-hidden">
               <CardHeader className="bg-purple-700 text-white p-4 sm:p-6">
-                <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center">
-                  <BookOpenIcon className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                  Learning Resources
-                </CardTitle>
-                <p className="mt-2 text-xs sm:text-sm text-purple-100">
-                  Explore our curated collection of educational materials to enhance your skills.
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center">
+                      <BookOpenIcon className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                      Learning Resources
+                    </CardTitle>
+                    <p className="mt-2 text-xs sm:text-sm text-purple-100">
+                      Explore our curated collection of educational materials to enhance your
+                      skills.
+                    </p>
+                  </div>
+                  {currentUser?.role === "ADMIN" && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => router.push("/add-resource")}
+                      className="bg-white text-purple-700 hover:bg-purple-50"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Resource
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-4">
                 <ScrollArea className="h-[calc(100vh-250px)] sm:h-[calc(100vh-300px)]">
-                  <div className="grid gap-3 sm:gap-4">
-                    {resourcesData.map((resource) => (
-                      <Card
-                        key={resource.id}
-                        className="hover:bg-purple-50 transition-colors duration-200"
-                      >
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-start space-x-3 sm:space-x-4">
-                            <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-100 flex-shrink-0">
-                              {getFileIcon(resource.type)}
-                            </div>
-                            <div className="flex-grow min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1 sm:mb-2">
-                                <h3 className="text-sm sm:text-base font-semibold text-purple-800 truncate">
-                                  {resource.title}
-                                </h3>
-                                <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full mt-1 sm:mt-0">
-                                  {resource.type}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">
-                                {resource.description}
-                              </p>
-                              <div className="flex flex-wrap gap-1 sm:gap-2">
-                                {resource.tags.map((tag) => (
-                                  <Badge
-                                    key={tag}
-                                    variant="secondary"
-                                    className="bg-purple-100 text-purple-800 hover:bg-purple-200 text-xs px-1 py-0 sm:px-2 sm:py-1"
-                                  >
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  {isLoadingResources ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+                    </div>
+                  ) : resources.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-8 px-4">
+                      <BookOpenIcon className="h-16 w-16 text-purple-200 mb-4" />
+                      <h3 className="text-xl font-semibold text-purple-800 mb-2">
+                        No Resources Available
+                      </h3>
+                      <p className="text-gray-600 text-center mb-6 max-w-md">
+                        {currentUser?.role === "ADMIN"
+                          ? "Start building the resource library by adding educational materials."
+                          : "Check back later for educational resources and materials."}
+                      </p>
+                      {currentUser?.role === "ADMIN" && (
+                        <Button
+                          onClick={() => router.push("/add-resource")}
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add First Resource
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:gap-4">
+                      {resources.map((resource) => renderResourceCard(resource))}
+                    </div>
+                  )}
                 </ScrollArea>
               </CardContent>
             </Card>
@@ -381,6 +594,87 @@ export default function IntegratedCareerDevelopment() {
           </TabsContent>
         </Tabs>
       </div>
+      <Dialog open={!!resourceToEdit} onOpenChange={() => setResourceToEdit(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Resource</DialogTitle>
+            <DialogDescription>Make changes to the resource details below.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="title">Title</label>
+              <Input
+                id="title"
+                value={editFormData.title}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="description">Description</label>
+              <Textarea
+                id="description"
+                value={editFormData.description}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({ ...prev, description: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="type">Type</label>
+              <Input
+                id="type"
+                value={editFormData.type}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, type: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="url">URL</label>
+              <Input
+                id="url"
+                type="url"
+                value={editFormData.url}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, url: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="tags">Tags</label>
+              <Input
+                id="tags"
+                value={editFormData.tags}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, tags: e.target.value }))}
+                placeholder="Separate tags with commas"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResourceToEdit(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => resourceToEdit && handleEdit(resourceToEdit.id)}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={!!resourceToDelete} onOpenChange={() => setResourceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the resource.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setResourceToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resourceToDelete && handleDelete(resourceToDelete)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -21,15 +21,14 @@ model User {
   eventRegistrations EventRegistration[]
   events             Event[]
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
   JobListing     JobListing[]
   JobApplication JobApplication[]
   SavedJob       SavedJob[]
 
-  followers Follower[] @relation("UserFollowers")
-  following Follower[] @relation("UserFollowing")
-  Resource  Resource[]
+  followers Followers[] @relation("following")
+  following Followers[] @relation("follower")
+
+  resources Resource[]
 
   mentorProfile MentorProfile?
 
@@ -40,7 +39,30 @@ model User {
   mentorSessions MentorshipSession[] @relation("MentorSessions")
   menteeSessions MentorshipSession[] @relation("MenteeSessions")
 
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@map("users")
+}
+
+// Message Model
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  sentAt     DateTime @default(now())
+  isRead     Boolean  @default(false)
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
 }
 
 model Profile {
@@ -136,29 +158,18 @@ enum EventType {
 }
 
 // Follower Model
-model Follower {
-  id          String   @id @default(uuid())
+model Followers {
+  follower    User     @relation("follower", fields: [followerId], references: [id])
   followerId  String
+  following   User     @relation("following", fields: [followingId], references: [id])
   followingId String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
-  following User @relation("UserFollowing", fields: [followingId], references: [id])
-
-  @@unique([followerId, followingId])
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("Follows")
 }
-
-// // Message Model
-// model Message {
-//   id         String   @id @default(uuid())
-//   senderId   String
-//   receiverId String
-//   content    String
-//   sentAt     DateTime @default(now())
-//   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-//   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-// }
 
 // JobListing Model
 model JobListing {
@@ -185,6 +196,8 @@ model JobListing {
   requiredSkills      RequiredSkill[]
   applications        JobApplication[]
   savedJobs           SavedJob[]
+
+  @@map("job_listings")
 }
 
 // RequiredSkill Model
@@ -194,6 +207,8 @@ model RequiredSkill {
 
   job   JobListing @relation(fields: [jobId], references: [id])
   jobId String
+
+  @@map("required_skills")
 }
 
 // JobApplication Model
@@ -227,6 +242,8 @@ model SavedJob {
 
   job   JobListing @relation(fields: [jobId], references: [id])
   jobId String
+
+  @@map("saved_jobs")
 }
 
 // Resource Model
@@ -241,6 +258,8 @@ model Resource {
   uploadedBy  String
 
   user User @relation(fields: [uploadedBy], references: [id])
+
+  @@map("resources")
 }
 
 // MentorProfile Model
@@ -251,6 +270,8 @@ model MentorProfile {
   yearsOfExperience Int?
   maxMentees        Int?
   user              User    @relation(fields: [userId], references: [id])
+
+  @@map("mentor_profiles")
 }
 
 // MenteeProfile Model
@@ -263,6 +284,8 @@ model MenteeProfile {
   areasOfInterest        String?
   expectedGraduationDate DateTime?
   user                   User      @relation(fields: [userId], references: [id])
+
+  @@map("mentee_profiles")
 }
 
 // MentorshipProgram Model
@@ -278,6 +301,8 @@ model MentorshipProgram {
   createdBy       String
   createdAt       DateTime  @default(now())
   user            User      @relation(fields: [createdBy], references: [id])
+
+  @@map("mentorship_programs")
 }
 
 enum UserRole {
@@ -332,6 +357,9 @@ model MentorshipSession {
   menteeId String
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mentorship_sessions")
 }
 
 enum MentorshipStatus {

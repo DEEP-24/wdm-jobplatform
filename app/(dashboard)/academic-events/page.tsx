@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,27 +30,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { formatDate } from "@/hooks/misc";
 import { useToast } from "@/hooks/use-toast";
 import { getEventTypeLabel } from "@/lib/event-type-labels";
 import { cn } from "@/lib/utils";
 import { EventType, UserRole } from "@prisma/client";
 import { format, parseISO } from "date-fns";
-import { Clock, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
+import { Clock, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { Montserrat, Open_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
