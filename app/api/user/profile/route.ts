@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { hashPassword } from "@/hooks/misc";
+import { hashPassword } from "@/lib/server/misc";
 import { z } from "zod";
 import { profileSchema } from "@/app/schema";
 

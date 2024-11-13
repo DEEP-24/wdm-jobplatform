@@ -12,8 +12,15 @@ export interface Profile {
 export type User = {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  following?: User[];
-  followers?: User[];
+  profile?: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    streetAddress: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    dob: string;
+  };
+  notificationPreferences?: string;
 };

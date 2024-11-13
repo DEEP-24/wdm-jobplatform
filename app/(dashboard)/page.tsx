@@ -310,7 +310,8 @@ export default function HomePage() {
           <CardTitle
             className={`text-xl sm:text-2xl md:text-3xl font-bold ${montserrat.className}`}
           >
-            Welcome to GrowthLink, {currentUser?.firstName} {currentUser?.lastName}!
+            Welcome to GrowthLink, {currentUser?.profile?.firstName}{" "}
+            {currentUser?.profile?.lastName}!
           </CardTitle>
         </CardHeader>
         <CardContent>
