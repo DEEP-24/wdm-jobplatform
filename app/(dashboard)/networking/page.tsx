@@ -84,6 +84,19 @@ export default function AcademicNetworkPage() {
         const followerIds =
           followersData.followers?.map((follow: { followerId: string }) => follow.followerId) || [];
 
+        // Get following users
+        const followingResponse = await fetch("/api/users/following");
+        const followingData = await followingResponse.json();
+
+        console.log("Following data:", followingData); // Debug log
+
+        // Set following IDs
+        const followingIds =
+          followingData.following?.map((follow: { followingId: string }) => follow.followingId) ||
+          [];
+
+        setFollowingIds(followingIds);
+
         // Filter out the current user and add isFollowingMe flag
         const filteredUsers = usersData.users
           .filter((user: User) => user.id !== currentUserData.user.id)
@@ -93,16 +106,6 @@ export default function AcademicNetworkPage() {
           }));
 
         setUsers(filteredUsers);
-
-        // Get following ids
-        const followingResponse = await fetch("/api/users/following");
-        const followingData = await followingResponse.json();
-
-        if (followingData.following) {
-          setFollowingIds(
-            followingData.following.map((follow: { followingId: string }) => follow.followingId),
-          );
-        }
       } catch (err: unknown) {
         console.error("Error fetching users:", err);
         toast({
@@ -146,8 +149,10 @@ export default function AcademicNetworkPage() {
         }
       }
 
-      // Update local state
-      setFollowingIds((prev) => [...prev, userToFollow.id]);
+      // Update followingIds state
+      const newFollowingIds = [...followingIds, userToFollow.id];
+      console.log("Updated following IDs after follow:", newFollowingIds);
+      setFollowingIds(newFollowingIds);
 
       const name = userToFollow.profile
         ? `${userToFollow.profile.firstName} ${userToFollow.profile.lastName}`
@@ -198,7 +203,9 @@ export default function AcademicNetworkPage() {
       }
 
       // Update local state
-      setFollowingIds((prev) => prev.filter((id) => id !== userToUnfollow.id));
+      const newFollowingIds = followingIds.filter((id) => id !== userToUnfollow.id);
+      console.log("Updated following IDs after unfollow:", newFollowingIds);
+      setFollowingIds(newFollowingIds);
 
       const name = userToUnfollow.profile
         ? `${userToUnfollow.profile.firstName} ${userToUnfollow.profile.lastName}`
@@ -247,6 +254,12 @@ export default function AcademicNetworkPage() {
       );
     });
   }, [searchTerm, users]);
+
+  console.log("Current followingIds state:", followingIds); // Debug log
+
+  console.log("Current user:", currentUser);
+  console.log("Following IDs:", followingIds);
+  console.log("Filtered Users:", filteredUsers);
 
   return (
     <div className={`min-h-screen bg-gray-50 ${poppins.className}`}>

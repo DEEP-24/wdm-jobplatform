@@ -31,6 +31,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { Suspense } from "react";
 import { LoadingComponent } from "./_components/loading";
+import { Toaster } from "@/components/ui/toaster";
 
 const roboto = Roboto({
   weight: ["400", "500", "700"],
@@ -418,6 +419,7 @@ export default function ModernLayout({ children }: ModernLayoutProps) {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Suspense fallback={<LoadingComponent />}>{children}</Suspense>
       </main>
+      <Toaster />
     </div>
   );
 }

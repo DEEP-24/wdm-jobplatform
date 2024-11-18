@@ -68,10 +68,19 @@ export default function ChatPage() {
   const fetchFollowedUsers = async () => {
     try {
       const response = await fetch("/api/users/following");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       console.log("Following users response:", data);
 
-      setChatUsers(Array.isArray(data) ? data : []);
+      const sortedUsers = data.sort((a: ChatUser, b: ChatUser) => {
+        const aTime = a.lastMessage?.sentAt ? new Date(a.lastMessage.sentAt).getTime() : 0;
+        const bTime = b.lastMessage?.sentAt ? new Date(b.lastMessage.sentAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      setChatUsers(sortedUsers || []);
     } catch (error) {
       console.error("Error fetching followed users:", error);
       toast({
@@ -215,15 +224,24 @@ export default function ChatPage() {
             {/* Chat Area */}
             <div className="h-[calc(100vh-200px)] bg-gray-50">
               {selectedUser ? (
-                <ChatComponent
-                  recipientId={selectedUser.id}
-                  recipientName={getUserName(selectedUser)}
-                  recipientEmail={selectedUser.email}
-                  recipientProfile={selectedUser.profile}
-                  currentUserId={currentUser?.id}
-                  isOpen={true}
-                  onClose={() => setSelectedUser(null)}
-                />
+                <div className="h-full">
+                  {!selectedUser.lastMessage && (
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-gray-500 z-10">
+                      <p>No conversation history with {getUserName(selectedUser)}</p>
+                      <p className="text-sm">Send a message to start chatting!</p>
+                    </div>
+                  )}
+                  <ChatComponent
+                    key={selectedUser.id}
+                    recipientId={selectedUser.id}
+                    recipientName={getUserName(selectedUser)}
+                    recipientEmail={selectedUser.email}
+                    recipientProfile={selectedUser.profile}
+                    currentUserId={currentUser?.id}
+                    isOpen={true}
+                    onClose={() => setSelectedUser(null)}
+                  />
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   Select a user to start messaging

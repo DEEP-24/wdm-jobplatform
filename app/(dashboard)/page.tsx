@@ -43,6 +43,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -130,12 +131,76 @@ function EventRegistrationModal({
   onClose,
 }: { event: AcademicEvent; isOpen: boolean; onClose: () => void }) {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registeredSessions, setRegisteredSessions] = useState<string[]>([]);
+  const { toast } = useToast();
 
-  const handleRegister = () => {
-    // Implement registration logic here
-    console.log(`Registered for session: ${selectedSession}`);
-    onClose();
+  useEffect(() => {
+    const fetchRegistrationStatus = async () => {
+      try {
+        const response = await fetch(`/api/academic-events/${event.id}/registrations`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch registration status");
+        }
+        const data = await response.json();
+        setRegisteredSessions(data.registeredSessions);
+      } catch (error) {
+        console.error("Error fetching registration status:", error);
+      }
+    };
+
+    if (isOpen) {
+      fetchRegistrationStatus();
+    }
+  }, [isOpen, event.id]);
+
+  const isSelectedSessionRegistered =
+    selectedSession && registeredSessions.includes(selectedSession);
+
+  const handleRegister = async () => {
+    if (!selectedSession) {
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      const response = await fetch("/api/academic-events/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          sessionId: selectedSession,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Registration failed");
+      }
+
+      setRegisteredSessions((prev) => [...prev, selectedSession]);
+
+      toast({
+        title: "Registration Successful",
+        description: "You have been successfully registered for this session.",
+        variant: "default",
+      });
+
+      onClose();
+    } catch (error) {
+      console.error("Error registering for event:", error);
+      toast({
+        title: "Registration Failed",
+        description: "Failed to register for the event. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegistering(false);
+    }
   };
+
+  const isDisabled = Boolean(!selectedSession || isRegistering || isSelectedSessionRegistered);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -172,25 +237,36 @@ function EventRegistrationModal({
           <div>
             <h4 className="mb-4 text-sm font-medium text-purple-800">Available Sessions:</h4>
             <ScrollArea className="h-[200px] w-full rounded-md border border-purple-200 p-4">
-              {event.sessions.map((session) => (
-                <div key={session.id} className="mb-4 last:mb-0">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="session"
-                      value={session.id}
-                      checked={selectedSession === session.id}
-                      onChange={() => setSelectedSession(session.id)}
-                      className="form-radio text-purple-600"
-                    />
-                    <span className="text-sm font-medium text-purple-800">{session.title}</span>
-                  </label>
-                  <p className="ml-6 text-xs text-purple-600">
-                    {format(parseISO(session.startTime), "h:mm a")} -{" "}
-                    {format(parseISO(session.endTime), "h:mm a")}
-                  </p>
-                </div>
-              ))}
+              {event.sessions.map((session) => {
+                const isRegistered = registeredSessions.includes(session.id);
+                return (
+                  <div key={session.id} className="mb-4 last:mb-0">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="session"
+                        value={session.id}
+                        checked={selectedSession === session.id}
+                        onChange={() => setSelectedSession(session.id)}
+                        disabled={isRegistered}
+                        className="form-radio text-purple-600 disabled:opacity-50"
+                      />
+                      <span className="text-sm font-medium text-purple-800">
+                        {session.title}
+                        {isRegistered && (
+                          <span className="ml-2 text-xs text-green-600 font-normal">
+                            (Already Registered)
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                    <p className="ml-6 text-xs text-purple-600">
+                      {format(parseISO(session.startTime), "h:mm a")} -{" "}
+                      {format(parseISO(session.endTime), "h:mm a")}
+                    </p>
+                  </div>
+                );
+              })}
             </ScrollArea>
           </div>
         </div>
@@ -198,10 +274,14 @@ function EventRegistrationModal({
           <Button
             type="submit"
             onClick={handleRegister}
-            disabled={!selectedSession}
+            disabled={isDisabled}
             className="bg-purple-600 text-white hover:bg-purple-700"
           >
-            Register
+            {isRegistering
+              ? "Registering..."
+              : isSelectedSessionRegistered
+                ? "Already Registered"
+                : "Register"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -282,14 +362,21 @@ export default function HomePage() {
       router.push("/login");
     }
 
-    const academicEventsString = localStorage.getItem("academicEvents");
-    if (academicEventsString) {
-      const allEvents: AcademicEvent[] = JSON.parse(academicEventsString);
-      setEvents(allEvents);
-      console.log("Fetched all events:", allEvents);
-    } else {
-      console.log("No events found in localStorage");
-    }
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch("/api/academic-events");
+        if (!response.ok) {
+          throw new Error("Failed to fetch events");
+        }
+        const data = await response.json();
+        setEvents(data);
+        console.log("Fetched events from API:", data);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
   }, [router]);
 
   const handleRegisterClick = (event: AcademicEvent) => {

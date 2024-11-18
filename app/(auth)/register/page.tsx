@@ -284,6 +284,7 @@ export default function Register() {
                   <Input
                     {...form.register("dob")}
                     type="date"
+                    max={new Date().toISOString().split("T")[0]}
                     className="pl-10 bg-white border-gray-300 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
