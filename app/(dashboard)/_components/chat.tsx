@@ -1,13 +1,12 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { disconnectSocket, getSocket, initializeSocket } from "@/lib/socket";
-import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 
 interface Message {
   id: string;
@@ -207,6 +206,11 @@ export default function ChatComponent({
           </Button>
         </div>
       </form>
+      {isLoading && (
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { CalendarIcon, Mail, MapPin, Phone, UserCircle } from "lucide-react";
 import { Poppins } from "next/font/google";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 import { USA_STATES } from "@/app/constants/usa-states";
 import type { User } from "@/app/types/user";
@@ -58,6 +59,7 @@ type ProfileFormValues = {
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<User | null>(null);
+  const router = useRouter();
 
   const form = useForm<ProfileFormValues>({
     defaultValues: {
@@ -88,7 +90,8 @@ export default function ProfilePage() {
         const data = await response.json();
 
         if (!data.authenticated || !data.user) {
-          throw new Error("No user data found");
+          router.push("/login");
+          return;
         }
 
         const user = data.user;
@@ -127,13 +130,14 @@ export default function ProfilePage() {
           description: "Failed to load profile data. Please try again later.",
           variant: "destructive",
         });
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, [form]);
+  }, [router, form]);
 
   async function onSubmit(values: ProfileFormValues) {
     try {
@@ -495,9 +499,6 @@ export default function ProfilePage() {
                     name="notificationPreferences"
                     render={({ field }) => (
                       <FormItem className="space-y-4">
-                        <FormLabel className="text-purple-800 font-semibold">
-                          Choose your notification methods:
-                        </FormLabel>
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -516,25 +517,7 @@ export default function ProfilePage() {
                               Email
                             </label>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={field.value.includes("sms")}
-                              onCheckedChange={(checked) => {
-                                const updatedValue = checked
-                                  ? [...field.value, "sms"]
-                                  : field.value.filter((v) => v !== "sms");
-                                field.onChange(updatedValue);
-                              }}
-                            />
-                            <label
-                              htmlFor="sms"
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              Text Message (SMS)
-                            </label>
-                          </div>
                         </div>
-                        <FormDescription>Select one or more notification methods.</FormDescription>
                       </FormItem>
                     )}
                   />

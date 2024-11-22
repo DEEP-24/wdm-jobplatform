@@ -404,7 +404,6 @@ export default function Register() {
                         <SelectItem value={UserRole.EMPLOYER}>Employer</SelectItem>
                         <SelectItem value={UserRole.ORGANIZER}>Organizer</SelectItem>
                         <SelectItem value={UserRole.MENTOR}>Mentor</SelectItem>
-                        <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
